@@ -1,4 +1,3 @@
-
 # 原始用户需求描述
 
 
@@ -576,13 +575,6 @@
         3.  将总结报告和提炼的知识点存入PKBM，用于未来改进LLM的Prompt、微调LLM模型或优化流程本身。
     *   **输入:** PKBM中的全部项目数据。
     *   **输出:** 项目总结报告，可复用知识点。
-
----
-
-
-
----
-
 # 已完成阶段输出
 
 4.  **0.4 项目类型与技术栈引导Agent (Project Type & Tech Stack Elicitation Agent):**
@@ -2416,941 +2408,1235 @@ graph TD
 3.  **Agent 实现:** 各个具体Agent (0.1 到 6.7) 的实现任务 (ST020, ST021, ST\_A0\_4 至 ST\_A6\_7) 被安排在它们所依赖的核心服务组件（如ST013 - Agent编排服务核心, ST017 - PKBM服务接口, ST019 - LLM网关接口）建立之后。它们之间的顺序大致遵循了原始需求中定义的流程顺序。
 4.  **回溯逻辑 (ST012, ST_LAST):** 与回溯相关的任务被安排在较后，因为它们依赖于基本工作流和Agent编排服务的稳定。
 5.  **严格顺序:** 此计划严格遵循了“任务不可以并行执行”的约束。后续的流程协调器将按此`priority`顺序逐个启动任务，并确保其`dependencies`已满足。
-
----
-
----
-
-# 当前子任务
-
 18. **3.1 当前子任务上下文准备Agent (Current Subtask Context Preparer):**
 
-根据我们之前制定的 `编码任务计划 v1.0 (CodingTaskPlan_v1.0)`，当前需要处理的第一个子任务是：
+## Current Subtask Context Package for ST018
 
-*   **子任务ID (Sub-task ID):** `ST016`
-*   **描述 (Description):** "Implement the Project_Knowledge_Base_Manager_Service (PKBM_Service) core logic for file operations."
-    *   *(中文解释：实现项目知识库管理服务 (PKBM_Service) 的核心文件操作逻辑。)*
-*   **优先级 (Priority):** 1
-*   **依赖 (Dependencies):** 无
+**Package ID:** `Context_ST018_v1.0`
+**Timestamp:** `2023-10-30T10:00:00Z` (Illustrative)
+**Prepared For Subtask:** `ST018`
+**Subtask Description (from CodingTaskPlan_v1.0):** "Implement the LLM_Interaction_Gateway_Service core logic for making HTTP calls."
 
-为了确保后续的详细设计工作能够顺利进行，我将从项目知识库 (PKBM) 中收集与 `ST016` 相关的所有必要信息，包括：
-1.  相关的用户故事及其验收标准。
-2.  相关的架构设计部分（组件职责、接口定义等）。
-3.  项目元数据（如技术栈、编码规范等）。
-4.  由于这是一个新功能的实现，目前没有“现有的相关代码片段”。
+### 1. Relevant User Stories & Acceptance Criteria Context
 
-这些信息将被整理成一个上下文包，供后续的详细设计Agent（例如，“3.3 数据模型详细设计Agent” 和 “3.4 类与函数逻辑设计Agent”）使用。
+This sub-task (ST018) is a foundational technical enabler. It directly supports the architectural component `LLM_Interaction_Gateway_Service`, which is essential for multiple user stories involving LLM interactions. While ST018 doesn't map to a single end-user story, its successful implementation is crucial for:
 
----
+*   **US024:** "As a Developer, I want to...generate an extremely specific, context-rich prompt text for an external code generation LLM (Roo code LLM)..." (This gateway will send that prompt).
+*   **US029:** "As a Developer, I want to...have an AI Code Reviewer agent analyze the code..." (This agent will likely use an LLM via the gateway).
+*   **US031:** "As a Developer, I want to...have the system generate unit test case code..." (LLM for test generation via gateway).
+*   **US035:** "As a Developer, I want to...have the system generate a specific LLM prompt for fixing identified bugs..." (Fixes via LLM using the gateway).
 
-**上下文包生成过程:**
+The "acceptance criteria" for ST018 itself will be more technical, focusing on the correct implementation of HTTP call functionalities as per its defined interface (CID011) and component responsibilities. These will be further detailed by the `3.4 Class & Function Logic Design Agent`.
 
-1.  **获取当前子任务:** `ST016` 已从 `CodingTaskPlan_v1.0` 确认。
-2.  **从PKBM调取相关上下文:**
-    *   **用户故事和验收标准:** 我将查找 `RequirementsSpecificationDocument_v1.0` 中与PKBM文件操作逻辑相关的用户故事和验收标准。主要是围绕US002。
-    *   **架构设计部分:** 我将从 `HighLevelArchitectureDesignDocument_v1.0` 中提取 `Project_Knowledge_Base_Manager_Service` 组件的职责、以及与其文件操作相关的架构原则。
-    *   **项目元数据:** 我将参考 `项目元数据 v1.0` 以获取技术栈（Python, File-based PKBM）和任何已定义的编码规范。
-    *   **现有代码:** 此任务是新实现，因此无现有代码。
+### 2. Architectural Context
 
-现在，我将生成这个上下文包。
+**Source Document:** `HighLevelArchitectureDesignDocument_v1.0`
 
----
+*   **Component Definition (LLM_Interaction_Gateway_Service):**
+    *   **Description:** Provides a centralized and standardized interface for all internal services/agents to communicate with external Large Language Models (LLMs).
+    *   **Core Responsibilities relevant to ST018:**
+        *   Abstracting LLM interaction specifics.
+        *   Managing API calls (REST-based).
+        *   Handling request construction and response parsing.
+        *   Implementing retry mechanisms.
+        *   Logging LLM interactions.
+        *   (Managing LLM API keys - simplified direct configuration for this task).
 
-**输出: 当前子任务的完整上下文包 (Current Subtask Context Package)**
+*   **Relevant Interface Definition (from `ComponentInterfaceDraft_v1.0` and HLDD Section 4):**
+    *   **Interface ID:** `CID011` (Conceptual internal interface)
+    *   **Interaction:** `Agent_Orchestration_Service` -> `LLM_Interaction_Gateway_Service`
+    *   **Type:** Internal Python function call within the `LLM_Interaction_Gateway_Service` that will encapsulate the HTTP logic.
+    *   **Conceptual Function Signature (to be refined by Agent 3.4):** `execute_llm_call(prompt_data: dict, target_llm_config: dict) -> dict`
+    *   **Description:** "Sends a request to a configured LLM and returns the response. Handles actual HTTP communication."
+    *   **ST018 Focus:** This subtask is about implementing the *actual HTTP communication* part within the `LLM_Interaction_Gateway_Service` that would be invoked by a function like `execute_llm_call`.
 
-```json
-{
-  "context_package_id": "CP_ST016_v1.0",
-  "sub_task_id": "ST016",
-  "sub_task_description": "Implement the Project_Knowledge_Base_Manager_Service (PKBM_Service) core logic for file operations.",
-  "timestamp": "CURRENT_TIMESTAMP", // To be filled by PKBM upon storage
-  "generated_by_agent": "3.1 Current Subtask Context Preparer",
-  "target_detailed_design_agents": [
-    "3.3 Data Model Detailed Design Agent",
-    "3.4 Class & Function Logic Design Agent"
-  ],
-  "context_data": {
-    "user_stories_and_acceptance_criteria": [
-      {
-        "user_story_id": "US002",
-        "text": "As a: System, I want to: store any received document or structured information in a file-based Project Knowledge Base (PKBM) using predefined directory structures and naming conventions that include version (timestamp) and descriptive tags in the filename, So that: all agents have a consistent, versioned, and retrievable source of project artifacts.",
-        "notes": "Core PKBM functionality (Agent 0.2). Covers QG5, QG6, QG7, Q0.2.1. Write access is serialized (QG8).",
-        "acceptance_criteria": [
-          {
-            "ac_id": "US002_AC1",
-            "description": "Verify correct storage of documents in PKBM with proper naming and versioning.",
-            "gherkin": "Given an Agent has a document or structured information to store\nAnd the PKBM uses a predefined directory structure (QG9)\nWhen the '0.2 Project Knowledge Base Manager Agent' receives the information\nThen a file is created in the appropriate predefined directory\nAnd the filename includes a descriptive tag, a version (timestamp as per QG5), and the source agent ID (Q0.2.1)\nAnd the content of the file exactly matches the information provided for storage\nAnd this write operation is serialized (QG8)."
-          },
-          {
-            "ac_id": "US002_AC2",
-            "description": "Verify PKBM provides information retrieval based on filenames and partial content scanning.",
-            "gherkin": "Given information is stored in PKBM with descriptive filenames (Q0.2.1)\nWhen an Agent requests information from PKBM using tags, keywords, or associations\nThen the PKBM (simulated by Agent scanning filenames/content - QG10) can locate and provide the relevant file(s) or their paths."
-          },
-          {
-            "ac_id": "US002_AC3",
-            "description": "Verify PKBM uses TXT as default format if not specified.",
-            "gherkin": "Given an Agent provides information to PKBM without specifying a format\nAnd the information is not explicitly Markdown or JSON\nThen the PKBM stores the information as a plain TXT file (QG7)."
-          }
-        ]
-      }
-    ],
-    "architecture_context": {
-      "relevant_component_name": "Project_Knowledge_Base_Manager_Service (PKBM_Service)",
-      "component_description_from_architecture_doc": "Manages all persistent storage and retrieval of project artifacts within the file-based system.",
-      "core_responsibilities_from_architecture_doc": [
-        "Providing an API for CRUD operations on artifacts (files)",
-        "Enforcing directory structures and file naming conventions (including versioning and tags)",
-        "Managing serialized write access",
-        "Supporting artifact retrieval based on filenames/paths and simulated tag/keyword search"
-      ],
-      "key_architectural_principles_for_pkbm_core_logic": [
-        "File-based storage (no traditional database).",
-        "Operations must support a specific directory structure strategy (to be detailed by Data Model Design Agent).",
-        "Operations must support file naming conventions including version (timestamp) and tags (to be detailed by Data Model Design Agent).",
-        "All write operations to the file system must be strictly serialized to prevent race conditions (QG8 from US002_AC1)."
-      ],
-      "relevant_interfaces_to_be_supported_by_core_logic": [
-        "Foundation for `store_artifact` (CID009 from ComponentInterfaceDraft_v1.0)",
-        "Foundation for `retrieve_artifact` (CID010 from ComponentInterfaceDraft_v1.0)"
-      ]
-    },
-    "project_metadata_context": {
-      "source_document_id": "项目元数据 v1.0",
-      "primary_programming_language": "Python",
-      "project_knowledge_base_manager_pkbm": {
-        "type": "File-based Knowledge Base",
-        "organization": "Specific directory structure with individual files for each artifact.",
-        "information_linking": "Through filename and directory structure conventions.",
-        "write_management": "Strictly serialized writes to the knowledge base."
-      },
-      "coding_guidelines_source": "To be retrieved from PKBM. If not specified, follow standard Python (PEP 8) and project-specific conventions for AutoGen agent development. Focus on clarity, maintainability, and robust file operations. Ensure proper error handling for file I/O operations (e.g., file not found, permission issues, disk full)."
-    },
-    "existing_code_context": {
-      "status": "Not applicable for this sub-task.",
-      "reason": "ST016 is for the new implementation of PKBM_Service core logic."
-    }
-  }
-}
-```
+*   **Technology Selection for LLM Interaction:**
+    *   Method: Standard REST API calls. Python's `requests` library is the anticipated choice for making these HTTP calls.
 
-19. **3.2 API详细设计Agent (API Detailed Design Agent):** *(如果子任务涉及API)*
+### 3. Project Metadata Summary
 
-1.  **子任务描述 (ST016):** 专注于实现 `PKBM_Service` 的 *核心文件操作逻辑*。
-2.  **架构上下文:**
-    *   `PKBM_Service` 的核心职责包括 "Providing an API for CRUD operations on artifacts (files)"。
-    *   架构文档 (`HighLevelArchitectureDesignDocument_v1.0`，在“已完成阶段输出”中有提及) 第4节明确指出：“Agents within the `Agent_Orchestration_Service` interact with: `Project_Knowledge_Base_Manager_Service`: For storing and retrieving artifacts (e.g., `pkbm_service.store_artifact()`, `pkbm_service.retrieve_artifact()`) via **internal Python function calls**.”
-    *   相关的接口草案ID (CID009 `store_artifact`, CID010 `retrieve_artifact`) 也在架构文档中被描述为 `PKBM_Service` 的内部调用。
-3.  **目标详细设计Agent:** 上下文包 `CP_ST016_v1.0` 指向的目标Agent是 "3.3 Data Model Detailed Design Agent" 和 "3.4 Class & Function Logic Design Agent"。它并没有将本Agent (3.2 API详细设计Agent) 列为该子任务输出的主要消费者。
+**Source Document:** `ProjectMetadata_v1.0`
 
-基于以上分析，我的结论是：
+*   **Primary Programming Language:** Python
+*   **LLM Interaction Method:** Standard REST API calls via Web Service (this gateway).
+*   **Key Simplifications & Constraints:**
+    *   Reduced emphasis on efficiency.
+    *   Focus on simplicity and success rate.
+    *   Security considerations are explicitly deprioritized; all permissions should be as open as possible to ensure functionality.
 
-子任务 `ST016` 本身并不涉及创建或设计供外部 HTTP 调用的 API。`PKBM_Service` 的 "API" 在此上下文中指的是它向系统内其他Python组件（特别是其他Agent）暴露的内部编程接口（即Python类的方法和函数签名）。这些内部接口的详细设计将由后续的 **3.4 类与函数逻辑设计Agent** 负责。
+### 4. Coding Standards and Guidelines
 
-因此，对于子任务 `ST016`，我不会生成一个包含 HTTP API 详细信息的文档。我将生成一份说明此评估的记录。
+**Source:** User-provided "编码规范" (Full text to be provided to LLM for code generation).
+Key aspects relevant to this task include:
+*   **Modular Design:** The HTTP call logic should be a well-defined part of the `LLM_Interaction_Gateway_Service`.
+*   **Configuration Management:** Any configurable parts of HTTP calls (e.g., default timeouts, base URLs if they become configurable) should be managed via `@dataclass`. For ST018, API keys and specific LLM endpoints will likely be passed in `target_llm_config`.
+*   **Error Handling:** Comprehensive `try-except` blocks for network errors, HTTP errors (4xx, 5xx), timeouts, JSON parsing errors. Error messages should be clear.
+*   **Logging:** Log requests (perhaps not full data for brevity, but target URL and status), responses (status, errors), and execution times.
+*   **Code Style:** Python (4-space indent, 79-char lines, snake_case, Type Hinting).
+*   **Dependencies:** Prioritize Python standard library (`json`) and `requests` for HTTP.
+*   **No Comments/DocStrings:** Code should be self-explanatory.
 
-如果后续有其他子任务明确需要将 `PKBM_Service` 的功能通过 HTTP API 暴露给例如 `Web_UI_Service` 或其他外部系统，那么届时我才会为该特定子任务进行详细的 HTTP API 设计。
+### 5. Existing Code Snippets for Modification
 
----
+*   Not applicable for ST018, as this is a new implementation.
 
-以下是我将存入PKBM的文档，标记为 **"API详细设计_ST016_v1.0"**:
+### 6. Additional Notes or Constraints for ST018
 
-```json
-{
-  "document_id": "APIDetailedDesign_ST016_v1.0",
-  "sub_task_id": "ST016",
-  "sub_task_description": "Implement the Project_Knowledge_Base_Manager_Service (PKBM_Service) core logic for file operations.",
-  "version": "1.0",
-  "timestamp": "CURRENT_TIMESTAMP", // To be filled by PKBM upon storage
-  "generated_by_agent": "3.2 API Detailed Design Agent",
-  "status": "Not Applicable",
-  "reasoning": "Sub-task ST016 focuses on the core internal file operation logic for the PKBM_Service. As per the HighLevelArchitectureDesignDocument_v1.0 (Section 4) and the context package CP_ST016_v1.0, the PKBM_Service interacts with other internal system components (e.g., AutoGen agents) via internal Python function calls (e.g., pkbm_service.store_artifact(), pkbm_service.retrieve_artifact()), not external HTTP APIs. The detailed design of these internal Python interfaces (methods and function signatures) will be handled by the '3.4 Class & Function Logic Design Agent'. Therefore, no external HTTP API design is required for this specific sub-task.",
-  "detailed_api_design": null,
-  "next_recommended_agents_for_st016_output": [
-    "3.3 Data Model Detailed Design Agent",
-    "3.4 Class & Function Logic Design Agent"
-  ]
-}
-```
+*   **Focus:** The core task is to implement robust functions/methods that can make HTTP GET, POST (and potentially other methods if deemed necessary by detailed design) requests, primarily targeting JSON-based REST APIs.
+*   **Input:** These functions will likely take parameters such as URL, HTTP method, headers, JSON payload, and timeout values.
+*   **Output:** They should return the parsed JSON response or raise specific, informative exceptions on failure.
+*   **Retry Logic:** Basic retry logic for transient network errors or specific HTTP status codes (e.g., 502, 503, 504) should be considered, as per component responsibility.
+*   **Configuration of LLM Endpoints/Keys:** For this subtask, assume that specific LLM API endpoints and keys will be provided dynamically (e.g., as part of `target_llm_config` in the conceptual `execute_llm_call` function). The HTTP call logic itself doesn't need to manage a persistent store of these but should use what's provided.
+*   **Security:** As per project guidelines, security is not a concern. No complex authentication schemes need to be implemented beyond what's typical for standard API key usage (e.g., passing a key in headers). SSL certificate verification should be enabled by default with `requests` but can be made configurable if absolutely necessary for specific non-production LLM endpoints (though generally not recommended). Prioritize successful connection.
 
-20. **3.3 数据模型详细设计Agent (Data Model Detailed Design Agent):**
+19. **3.2 API详细设计Agent (API Detailed Design Agent):**
 
-**Data Model Design Output:**
+# Detailed API Design for External LLM Calls (Subtask ST018)
 
-```json
-{
-  "document_id": "DataModelDetailedDesign_ST016_v1.0",
-  "sub_task_id": "ST016",
-  "sub_task_description": "Implement the Project_Knowledge_Base_Manager_Service (PKBM_Service) core logic for file operations.",
-  "version": "1.0",
-  "timestamp": "2023-10-29T10:00:00Z",
-  "generated_by_agent": "3.3 Data Model Detailed Design Agent",
-  "based_on_context_package": "CP_ST016_v1.0",
-  "data_model_type": "File-Based System Organization",
-  "design_details": {
-    "pkbm_root_directory": {
-      "description": "The base directory for the Project Knowledge Base. This should be configurable at the system level.",
-      "example_placeholder": "/path/to/project_pkbm_root/"
-    },
-    "directory_structure_convention": {
-      "description": "A two-level directory structure is proposed. The first level categorizes artifacts broadly. The second level (optional, if needed for further organization) can be based on a more specific artifact type or a unique project/session identifier if the PKBM needs to handle multiple distinct projects/sessions under one root (though current scope seems single-project focused). For ST016, we will focus on a primary category level.",
-      "primary_categories": [
-        {
-          "category_name": "00_ProjectMetaData",
-          "description": "Stores project-level metadata documents like '项目元数据 vX.Y'."
+**Document ID:** `APIDetailedDesign_ST018_v1.0`
+**Version:** 1.0
+**Timestamp:** 2023-10-30T10:15:00Z
+**Generated By:** Agent 3.2 API Detailed Design Agent
+**For Subtask:** ST018 - Implement the LLM_Interaction_Gateway_Service core logic for making HTTP calls.
+**Based On:** Context_ST018_v1.0
+
+## 1. Introduction
+
+This document outlines the detailed design considerations for the HTTP calls that the `LLM_Interaction_Gateway_Service` will make to external Large Language Model (LLM) APIs. It does not define an API exposed by the `LLM_Interaction_Gateway_Service` itself (which is an internal Python interface), but rather the structure of requests it must be capable of sending and the responses it must be prepared to handle from various third-party LLM providers. The primary goal is to ensure robust and flexible communication with diverse LLM REST APIs.
+
+Given the project's explicit prioritization of success rate and simplicity over security, authentication mechanisms will be straightforward (e.g., passing API keys directly as configured), and SSL/TLS verification will be standard but potentially configurable for non-production endpoints if absolutely necessary (though generally not recommended, this flexibility is noted due to the emphasis on successful connection).
+
+## 2. Generic HTTP Request Structure for LLM Calls
+
+The internal functions within `LLM_Interaction_Gateway_Service` responsible for making HTTP calls should be designed to accommodate the following parameters to construct requests to external LLM APIs.
+
+### 2.1. HTTP Method
+
+*   **Supported Methods:** Primarily `POST`. `GET` may also be needed for some LLM utility endpoints (e.g., listing models, checking status). The internal client function should accept the method as a parameter.
+    *   Example: `POST`, `GET`
+
+### 2.2. URL
+
+*   **Description:** The full URL of the external LLM API endpoint. This will be specific to each LLM provider and task.
+*   **Type:** `string`
+*   **Example:** `https://api.example-llm.com/v1/completions`
+
+### 2.3. Request Headers
+
+*   **Description:** A dictionary of HTTP headers. Common headers for LLM APIs include `Authorization`, `Content-Type`, and potentially custom provider-specific headers.
+*   **Type:** `Dict[str, str]`
+*   **Common Headers & Examples:**
+    *   `Authorization`:
+        *   Example (Bearer Token): `{"Authorization": "Bearer YOUR_API_KEY"}`
+        *   Example (Custom Key Header): `{"X-Api-Key": "YOUR_API_KEY"}`
+    *   `Content-Type`:
+        *   Example: `{"Content-Type": "application/json"}`
+    *   `Accept`:
+        *   Example: `{"Accept": "application/json"}` (Usually default, but good to be explicit if needed)
+
+### 2.4. Query Parameters
+
+*   **Description:** Optional URL query parameters. Some LLM APIs might use these for versioning or minor configuration.
+*   **Type:** `Optional[Dict[str, Any]]`
+*   **Example:** `{"version": "2023-10-01"}`
+
+### 2.5. Request Body (for `POST`, `PUT`, etc.)
+
+*   **Description:** The payload sent to the LLM API, typically a JSON object. The structure is highly dependent on the specific LLM provider and the task (e.g., completion, chat, embedding).
+*   **Format:** JSON
+*   **Generic JSON Schema (Illustrative - actual schema varies by LLM):**
+    ```json
+    {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "Identifier of the LLM model to use."
         },
-        {
-          "category_name": "01_RawRequirements",
-          "description": "Stores raw user requirements, e.g., '原始用户需求 vX.Y'."
+        "prompt": {
+          "type": "string",
+          "description": "The input text or instruction for the LLM."
         },
-        {
-          "category_name": "02_IntentAnalysis",
-          "description": "Stores outputs from intent recognition, e.g., '初步意图分析 vX.Y'."
-        },
-        {
-          "category_name": "03_RequirementSpecifications",
-          "description": "Stores detailed requirement specifications, user stories, acceptance criteria, e.g., '需求规格说明书 vX.Y', '用户故事集 vX.Y', '验收标准集 vX.Y'."
-        },
-        {
-          "category_name": "04_ArchitectureDocuments",
-          "description": "Stores architecture-related documents, e.g., '高层组件定义 vX.Y', '高层架构设计文档 vX.Y'."
-        },
-        {
-          "category_name": "05_TaskDefinitions",
-          "description": "Stores task breakdowns and plans, e.g., '编码子任务列表 vX.Y', '编码任务计划 vX.Y'."
-        },
-        {
-          "category_name": "06_DetailedDesigns",
-          "description": "Stores detailed design artifacts for sub-tasks, e.g., 'API详细设计_[子任务ID]_vX.Y', '实现指导书_[子任务ID]_vX.Y'."
-        },
-        {
-          "category_name": "07_GeneratedCode",
-          "description": "Stores code generated by LLMs or agents, including intermediate and final versions."
-        },
-        {
-          "category_name": "08_TestArtifacts",
-          "description": "Stores test cases, test results, and debugging reports."
-        },
-        {
-          "category_name": "09_ReviewFeedback",
-          "description": "Stores feedback from human review points."
-        },
-        {
-          "category_name": "10_IntegrationLogs",
-          "description": "Logs related to code integration."
-        },
-        {
-          "category_name": "11_SystemLogsAndReports",
-          "description": "General system operational logs, error reports, summary reports."
-        },
-        {
-          "category_name": "99_Misc",
-          "description": "For miscellaneous artifacts not fitting other categories."
-        }
-      ],
-      "path_format": "[pkbm_root_directory]/[primary_category_name]/[filename]"
-    },
-    "file_naming_convention": {
-      "description": "Filenames are designed to be descriptive and embed key metadata for identification, versioning, and retrieval, as per US002 and related Q&A.",
-      "components": [
-        {
-          "name": "artifact_identifier",
-          "description": "The primary name of the artifact, often including its conceptual version (e.g., '原始用户需求_v1.0', 'API详细设计_ST016_v1.0'). This should be unique enough within its context. For sub-task specific artifacts, it must include the sub_task_id.",
-          "constraints": "Should not contain characters problematic for filenames. Spaces should be replaced with underscores."
-        },
-        {
-          "name": "source_agent_id_tag",
-          "description": "A tag indicating the agent that generated/owns this artifact (e.g., 'Agent0.1', 'Agent3.3'). This corresponds to Q0.2.1.",
-          "format": "AgentX.Y (e.g., Agent0.1, Agent3.3)"
-        },
-        {
-          "name": "timestamp_version",
-          "description": "A precise timestamp acting as the physical file version, ensuring uniqueness and chronological ordering (YYYYMMDDHHMMSSmmm, as per QG5).",
-          "format": "YYYYMMDDHHMMSSmmm"
-        },
-        {
-          "name": "file_extension",
-          "description": "Indicates the file type (e.g., .txt, .json, .md). Default is .txt if not specified (US002_AC3).",
-          "supported": [".txt", ".json", ".md", ".py", ".java", ".html", ".css", ".js", ".puml", ".mer"]
-        }
-      ],
-      "filename_format": "[artifact_identifier]-[source_agent_id_tag]-[timestamp_version].[file_extension]",
-      "example_full_path": "/path/to/project_pkbm_root/01_RawRequirements/原始用户需求_v1.0-Agent0.1-20231026100000000.txt",
-      "example_detailed_design_path": "/path/to/project_pkbm_root/06_DetailedDesigns/数据模型详细设计_ST016_v1.0-Agent3.3-20231029100000000.json"
-    },
-    "data_storage_format_details": {
-      "default_format": ".txt (as per US002_AC3 if not specified and content is not intrinsically structured like JSON/MD)",
-      "structured_data_formats": {
-        "json": "Preferred for structured data, agent outputs, configurations.",
-        "markdown": "Preferred for human-readable documents, reports, specifications."
-      },
-      "content_handling_note": "The PKBM_Service core logic (ST016) primarily deals with files as byte streams for storage and retrieval. Interpretation of content (e.g., parsing JSON) is generally the responsibility of the agent creating or consuming the artifact, though the PKBM service will use the file extension to correctly store the file."
-    },
-    "versioning_and_tagging_strategy": {
-      "versioning": "Achieved via the 'timestamp_version' component in the filename. This ensures that every write operation can result in a new, uniquely identifiable file if needed, preserving history.",
-      "tagging": "Implicitly handled by: \n1. The 'primary_category_name' in the directory structure.\n2. The 'artifact_identifier' in the filename.\n3. The 'source_agent_id_tag' in the filename.\nExplicit, more granular tagging (like a list of arbitrary tags) would require storage within the file content or a separate metadata file, which is beyond the scope of ST016's core file operations and current requirements for a simple file-based PKBM.",
-      "information_linking": "Primarily through filename conventions (e.g., an artifact for sub-task 'STXYZ' will have 'STXYZ' in its name) and directory structure. Explicit links (e.g., 'document A refers to document B') would be stored within the content of artifacts if needed, or through specific knowledge graph features if the PKBM evolves (not in current scope)."
-    },
-    "write_serialization_note": {
-      "description": "As per US002_AC1 (QG8) and Project Metadata, all write operations to the file system must be strictly serialized. The implementation of this (e.g., using file locks, a centralized queue for write operations within the PKBM_Service class) will be part of the '3.4 Class & Function Logic Design Agent's' task, but the data model (file system organization) must not inherently prevent this.",
-      "impact_on_model": "No direct structural impact, but reinforces the need for well-defined file paths to avoid conflicts."
-    }
-  },
-  "next_recommended_agent_for_ST016_output": "3.4 Class & Function Logic Design Agent"
-}
-```
-
-21. **3.4 类与函数逻辑设计Agent (Class & Function Logic Design Agent):**
-
-**Class & Function Logic Design Document Output:**
-
-```json
-{
-  "document_id": "ClassFunctionLogicDesign_ST016_v1.0",
-  "sub_task_id": "ST016",
-  "sub_task_description": "Implement the Project_Knowledge_Base_Manager_Service (PKBM_Service) core logic for file operations.",
-  "version": "1.0",
-  "timestamp": "CURRENT_TIMESTAMP",
-  "generated_by_agent": "3.4 Class & Function Logic Design Agent",
-  "based_on_context_package": "CP_ST016_v1.0",
-  "based_on_data_model_design": "DataModelDetailedDesign_ST016_v1.0",
-  "design_details": {
-    "classes": [
-      {
-        "class_name": "PKBMService",
-        "description": "Manages all persistent storage and retrieval of project artifacts within a file-based system. It handles directory structure, file naming conventions, versioning via timestamps, and serialized write access.",
-        "language": "Python",
-        "attributes": [
-          {
-            "name": "root_dir",
-            "type": "str",
-            "description": "The absolute path to the root directory of the PKBM."
-          },
-          {
-            "name": "primary_categories",
-            "type": "List[str]",
-            "description": "A list of valid primary category names, loaded from DataModelDetailedDesign_ST016_v1.0."
-          },
-          {
-            "name": "write_lock",
-            "type": "threading.Lock",
-            "description": "A lock to ensure serialized write access to the file system, preventing race conditions."
-          }
-        ],
-        "constructor": {
-          "method_name": "__init__",
-          "parameters": [
-            {
-              "name": "pkbm_root_directory",
-              "type": "str",
-              "description": "The root directory for the PKBM. Must be an absolute path."
+        "messages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "role": {"type": "string", "enum": ["system", "user", "assistant"]},
+              "content": {"type": "string"}
             },
-            {
-              "name": "category_definitions",
-              "type": "List[Dict[str, str]]",
-              "description": "List of category definition objects (e.g., from DataModelDetailedDesign_ST016_v1.0 primary_categories)."
-            }
-          ],
-          "return_type": "None",
-          "core_logic": [
-            "Initialize self.root_dir with pkbm_root_directory after validating it's an absolute path and exists (or can be created).",
-            "Initialize self.primary_categories by extracting 'category_name' from each item in category_definitions.",
-            "Initialize self.write_lock = threading.Lock().",
-            "Call self._initialize_pkbm_structure() to ensure root and category directories exist."
-          ],
-          "error_handling": [
-            "Raise ValueError if pkbm_root_directory is not an absolute path.",
-            "Raise PKBMInitializationError if the root directory cannot be accessed or created."
-          ]
+            "required": ["role", "content"]
+          },
+          "description": "For chat-based LLMs, a list of messages."
         },
-        "methods": [
-          {
-            "method_name": "_initialize_pkbm_structure",
-            "visibility": "private",
-            "parameters": [],
-            "return_type": "None",
-            "description": "Ensures the PKBM root directory and all defined primary category subdirectories exist.",
-            "core_logic": [
-              "Attempt to create self.root_dir if it doesn't exist (os.makedirs(self.root_dir, exist_ok=True)).",
-              "For each category_name in self.primary_categories:",
-              "  category_path = self._get_category_path(category_name).",
-              "  Attempt to create category_path if it doesn't exist (os.makedirs(category_path, exist_ok=True))."
-            ],
-            "error_handling": [
-              "Raise PKBMInitializationError if any directory creation fails due to permissions or other OS errors."
-            ]
-          },
-          {
-            "method_name": "_get_category_path",
-            "visibility": "private",
-            "parameters": [
-              {"name": "category_name", "type": "str", "description": "The name of the primary category."}
-            ],
-            "return_type": "str",
-            "description": "Constructs the full path to a given primary category directory.",
-            "core_logic": [
-              "If category_name not in self.primary_categories, raise InvalidCategoryError.",
-              "Return os.path.join(self.root_dir, category_name)."
-            ],
-            "error_handling": [
-              "Raise InvalidCategoryError if category_name is not a defined primary category."
-            ]
-          },
-          {
-            "method_name": "_generate_timestamp",
-            "visibility": "private",
-            "parameters": [],
-            "return_type": "str",
-            "description": "Generates a timestamp string in YYYYMMDDHHMMSSmmm format as per QG5.",
-            "core_logic": [
-              "Get current datetime: now = datetime.datetime.now().",
-              "Format and return: now.strftime('%Y%m%d%H%M%S') + '{:03d}'.format(now.microsecond // 1000)."
-            ]
-          },
-          {
-            "method_name": "_generate_filename",
-            "visibility": "private",
-            "parameters": [
-              {"name": "artifact_identifier", "type": "str", "description": "Primary identifier of the artifact."},
-              {"name": "source_agent_id_tag", "type": "str", "description": "Tag for the source agent."},
-              {"name": "timestamp_version", "type": "str", "description": "Generated timestamp for versioning."},
-              {"name": "file_extension", "type": "str", "description": "File extension (e.g., 'txt', 'json')."}
-            ],
-            "return_type": "str",
-            "description": "Constructs a filename based on the defined convention from DataModelDetailedDesign_ST016_v1.0.",
-            "core_logic": [
-              "Clean artifact_identifier (replace spaces with underscores, remove problematic characters).",
-              "Return f\"{cleaned_artifact_identifier}-{source_agent_id_tag}-{timestamp_version}.{file_extension.lstrip('.')}\"."
-            ]
-          },
-          {
-            "method_name": "store_artifact",
-            "visibility": "public",
-            "parameters": [
-              {"name": "category_name", "type": "str", "description": "The primary category for the artifact."},
-              {"name": "artifact_identifier", "type": "str", "description": "The base identifier for the artifact (e.g., '需求规格说明书_v1.0')."},
-              {"name": "source_agent_id", "type": "str", "description": "Identifier of the agent storing the artifact (e.g., 'Agent1.4')."},
-              {"name": "content", "type": "Union[str, bytes]", "description": "The content to be stored."},
-              {"name": "file_extension_override", "type": "Optional[str]", "default": "None", "description": "Explicitly set file extension. If None, attempts to infer or defaults to 'txt'."}
-            ],
-            "return_type": "str",
-            "description": "Stores an artifact in the PKBM. Enforces naming conventions, versioning, and serialized writes. Implements US002_AC1, US002_AC3.",
-            "core_logic": [
-              "1. Validate category_name: if not in self.primary_categories, raise InvalidCategoryError.",
-              "2. Determine file extension:",
-              "   If file_extension_override is provided, use it (remove leading dot if present).",
-              "   Else if content is bytes and artifact_identifier suggests a binary type (e.g. image based on its own extension), try to infer. (Simplified: for ST016, we might skip complex inference).",
-              "   Else if artifact_identifier ends with '.json', '.md', use that.",
-              "   Else, default to 'txt' (US002_AC3).",
-              "3. Generate timestamp_version using self._generate_timestamp().",
-              "4. Generate filename using self._generate_filename(artifact_identifier, source_agent_id, timestamp_version, determined_extension).",
-              "5. Get target directory path: target_dir = self._get_category_path(category_name).",
-              "6. Construct full file path: full_path = os.path.join(target_dir, filename).",
-              "7. Acquire self.write_lock (with a timeout to prevent deadlocks, e.g., self.write_lock.acquire(timeout=10)). If lock not acquired, raise PKBMConcurrencyError.",
-              "8. try:",
-              "   Ensure target_dir exists: os.makedirs(target_dir, exist_ok=True). (Redundant if _initialize_pkbm_structure works, but good for safety).",
-              "   Open file in write mode ('wb' if content is bytes, 'w' with encoding 'utf-8' if content is str).",
-              "   Write content to file.",
-              "   Close file.",
-              "9. except Exception as e (e.g., IOError, OSError, PermissionError):",
-              "   Log the error.",
-              "   Raise PKBMStorageError(f\"Failed to store artifact {full_path}: {e}\").",
-              "10. finally:",
-              "    self.write_lock.release() if lock was acquired.",
-              "11. Return full_path."
-            ],
-            "error_handling": [
-              "InvalidCategoryError: If category_name is invalid.",
-              "PKBMStorageError: For any file I/O errors during writing.",
-              "PKBMConcurrencyError: If write lock cannot be acquired."
-            ]
-          },
-          {
-            "method_name": "retrieve_artifact_content",
-            "visibility": "public",
-            "parameters": [
-              {"name": "full_artifact_path", "type": "str", "description": "The absolute path to the artifact file within the PKBM."},
-              {"name": "as_bytes", "type": "bool", "default": "False", "description": "If True, returns content as bytes. Otherwise, attempts to decode as UTF-8 string."}
-            ],
-            "return_type": "Union[str, bytes, None]",
-            "description": "Retrieves the content of a specific artifact given its full path. Returns None if not found.",
-            "core_logic": [
-              "1. Validate full_artifact_path starts with self.root_dir (security check). If not, log warning and return None or raise SecurityError.",
-              "2. try:",
-              "   Open file in read mode ('rb' if as_bytes, 'r' with encoding 'utf-8' otherwise).",
-              "   Read content.",
-              "   Close file.",
-              "   Return content.",
-              "3. except FileNotFoundError:",
-              "   Return None.",
-              "4. except Exception as e (e.g., IOError, OSError, PermissionError, UnicodeDecodeError):",
-              "   Log the error.",
-              "   Raise PKBMRetrievalError(f\"Failed to retrieve artifact {full_artifact_path}: {e}\")."
-            ],
-            "error_handling": [
-              "PKBMRetrievalError: For file I/O or decoding errors.",
-              "Returns None if file not found (as per description)."
-            ]
-          },
-          {
-            "method_name": "find_artifact_paths",
-            "visibility": "public",
-            "parameters": [
-              {"name": "category_name", "type": "str", "description": "The primary category to search within."},
-              {"name": "artifact_identifier_pattern", "type": "Optional[str]", "default":"None", "description": "A pattern to match against the artifact_identifier part of filenames (e.g., '需求规格说明书*', '*_v1.0*'). Simple glob-like matching or exact match if no wildcards."},
-              {"name": "source_agent_id_pattern", "type": "Optional[str]", "default":"None", "description": "A pattern to match against the source_agent_id_tag."},
-              {"name": "timestamp_range_start", "type": "Optional[str]", "default":"None", "description": "Timestamp (YYYYMMDDHHMMSSmmm) to filter artifacts created on or after this time."},
-              {"name": "timestamp_range_end", "type": "Optional[str]", "default":"None", "description": "Timestamp (YYYYMMDDHHMMSSmmm) to filter artifacts created on or before this time."},
-              {"name": "latest_only", "type": "bool", "default":"False", "description": "If True, returns only the path to the most recent matching artifact."}
-            ],
-            "return_type": "List[str]",
-            "description": "Finds artifact paths within a category matching given criteria. Implements part of US002_AC2. 'Partial content scanning' is out of scope for ST016.",
-            "core_logic": [
-              "1. Validate category_name: if not in self.primary_categories, raise InvalidCategoryError; else get category_path = self._get_category_path(category_name).",
-              "2. If not os.path.isdir(category_path), return [].",
-              "3. Initialize empty list: matching_files = [].",
-              "4. For each item_name in os.listdir(category_path):",
-              "   item_path = os.path.join(category_path, item_name).",
-              "   If os.path.isfile(item_path):",
-              "     filename_parts = self._parse_filename(item_name) # Helper to parse name, agent, timestamp, ext",
-              "     If filename_parts is None (not matching format), continue.",
-              "     match = True",
-              "     If artifact_identifier_pattern and not fnmatch.fnmatch(filename_parts['identifier'], artifact_identifier_pattern), match = False.",
-              "     If source_agent_id_pattern and not fnmatch.fnmatch(filename_parts['agent_id'], source_agent_id_pattern), match = False.",
-              "     If timestamp_range_start and filename_parts['timestamp'] < timestamp_range_start, match = False.",
-              "     If timestamp_range_end and filename_parts['timestamp'] > timestamp_range_end, match = False.",
-              "     If match, add (item_path, filename_parts['timestamp']) to a temporary list.",
-              "5. Sort the temporary list by timestamp (descending if latest_only is True, or for consistent ordering).",
-              "6. If latest_only and temporary list is not empty, matching_files = [temporary_list[0][0]].",
-              "7. Else, matching_files = [path for path, ts in temporary_list].",
-              "8. Return matching_files."
-            ],
-            "error_handling": [
-              "InvalidCategoryError: If category_name is invalid."
-            ]
-          },
-          {
-            "method_name": "_parse_filename",
-            "visibility": "private",
-            "parameters": [
-              {"name": "filename_with_ext", "type": "str", "description": "The full filename including extension."}
-            ],
-            "return_type": "Optional[Dict[str, str]]",
-            "description": "Parses a filename to extract its components based on the defined convention. Returns None if format doesn't match.",
-            "core_logic": [
-              "Use regular expression to match `(identifier)-(agent_id)-(timestamp).(extension)`.",
-              "Example regex: r'^(?P<identifier>.+)-(?P<agent_id>Agent\\d+\\.\\d+)-(?P<timestamp>\\d{17})\\.(?P<extension>[a-zA-Z0-9]+)$'",
-              "If match, return a dict: {'identifier': ..., 'agent_id': ..., 'timestamp': ..., 'extension': ...}.",
-              "Else, return None."
-            ]
+        "max_tokens": {
+          "type": "integer",
+          "description": "Maximum number of tokens to generate."
+        },
+        "temperature": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 2.0,
+          "description": "Controls randomness. Higher values make output more random."
+        },
+        "stream": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to stream back partial progress."
+        }
+        // Other provider-specific parameters like top_p, presence_penalty, etc.
+      },
+      "anyOf": [
+        {"required": ["model", "prompt"]},
+        {"required": ["model", "messages"]}
+      ]
+    }
+    ```
+*   **Example Request Body:**
+    ```json
+    {
+      "model": "example-text-davinci-003",
+      "prompt": "Translate 'hello' to French.",
+      "max_tokens": 50,
+      "temperature": 0.5
+    }
+    ```
+
+## 3. HTTP Response Handling
+
+The internal functions must be prepared to handle various HTTP status codes and response body formats.
+
+### 3.1. Successful Responses
+
+*   **Status Codes:** `200 OK`, `201 Created`
+*   **Response Body Format:** Typically JSON. The structure varies significantly by LLM provider.
+*   **Generic JSON Schema for Successful Completion (Illustrative):**
+    ```json
+    {
+      "type": "object",
+      "properties": {
+        "id": {"type": "string", "description": "A unique identifier for the response."},
+        "object": {"type": "string", "description": "The type of object (e.g., 'text_completion')."},
+        "created": {"type": "integer", "description": "Timestamp of creation."},
+        "model": {"type": "string", "description": "The model used for the request."},
+        "choices": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "text": {"type": "string"},
+              "message": { // For chat models
+                "type": "object",
+                "properties": {
+                  "role": {"type": "string"},
+                  "content": {"type": "string"}
+                }
+              },
+              "index": {"type": "integer"},
+              "finish_reason": {"type": "string", "enum": ["stop", "length", "content_filter"]}
+            }
           }
-        ],
-        "custom_exceptions_needed": [
-          "PKBMError(Exception): Base exception for PKBM service.",
-          "PKBMInitializationError(PKBMError): For errors during PKBM setup.",
-          "InvalidCategoryError(PKBMError): For invalid category names.",
-          "PKBMStorageError(PKBMError): For errors during artifact storage.",
-          "PKBMRetrievalError(PKBMError): For errors during artifact retrieval.",
-          "PKBMConcurrencyError(PKBMError): For issues with acquiring write lock."
-        ]
+        },
+        "usage": {
+          "type": "object",
+          "properties": {
+            "prompt_tokens": {"type": "integer"},
+            "completion_tokens": {"type": "integer"},
+            "total_tokens": {"type": "integer"}
+          }
+        }
+      },
+      "required": ["id", "object", "created", "model", "choices"]
+    }
+    ```
+*   **Action:** Parse the JSON response and return the relevant data.
+
+### 3.2. Client Error Responses
+
+*   **Status Codes:**
+    *   `400 Bad Request`: Invalid request payload (e.g., missing required fields, malformed JSON).
+    *   `401 Unauthorized`: Authentication failed (e.g., invalid API key).
+    *   `403 Forbidden`: API key valid but lacks permission for the requested resource/action.
+    *   `404 Not Found`: Requested resource/model does not exist.
+    *   `422 Unprocessable Entity`: Request was well-formed but semantically incorrect.
+    *   `429 Too Many Requests`: Rate limit exceeded.
+*   **Response Body Format:** Often JSON, containing error details.
+*   **Generic JSON Schema for Error Response (Illustrative):**
+    ```json
+    {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "object",
+          "properties": {
+            "message": {"type": "string", "description": "A human-readable error message."},
+            "type": {"type": "string", "description": "A short string identifying the error type (e.g., 'invalid_request_error', 'authentication_error')."},
+            "param": {"type": ["string", "null"], "description": "The specific parameter that caused the error, if applicable."},
+            "code": {"type": ["string", "null"], "description": "A provider-specific error code."}
+          },
+          "required": ["message", "type"]
+        }
       }
-    ],
-    "general_design_considerations": [
-      "Logging: All public methods and significant private methods should include logging (INFO for successful operations, WARNING for recoverable issues, ERROR/CRITICAL for failures). Use Python's `logging` module.",
-      "Error Handling: Methods should clearly define exceptions they might raise. File I/O operations must be wrapped in try-except blocks.",
-      "Atomicity: True atomicity for file writes is complex. The serialized write lock provides protection against concurrent writes by this service. For single file writes, OS operations are generally atomic at a low level, but power loss mid-write can still corrupt. This design assumes standard OS behavior.",
-      "Configuration: The `pkbm_root_directory` and `category_definitions` are passed during instantiation, allowing flexibility.",
-      "Dependencies: `os`, `datetime`, `threading`, `fnmatch` (for pattern matching), `re` (for parsing filename)."
-    ]
-  }
-}
+    }
+    ```
+*   **Action:** Parse the JSON error if available. Log detailed error information. Raise specific, informative exceptions within the gateway service (e.g., `LLMAuthenticationError`, `LLMRateLimitError`, `LLMBadRequestError`).
+
+### 3.3. Server Error Responses
+
+*   **Status Codes:**
+    *   `500 Internal Server Error`: An unexpected error occurred on the LLM provider's side.
+    *   `502 Bad Gateway`: Upstream server issue.
+    *   `503 Service Unavailable`: The LLM service is temporarily unavailable (e.g., overloaded, under maintenance).
+    *   `504 Gateway Timeout`: Upstream server did not respond in time.
+*   **Response Body Format:** May be JSON (similar to client errors), HTML, or plain text.
+*   **Action:** Log the error. Implement retry mechanisms (as per component responsibility) for transient errors like 500, 503, 504. If retries fail, raise an appropriate exception (e.g., `LLMServiceUnavailableError`).
+
+## 4. Authentication and Authorization
+
+*   **Mechanism:** As specified in the `Context_ST018_v1.0` and project guidelines, authentication with external LLMs will be handled by passing API keys.
+*   **Implementation:** The internal HTTP client functions must accept header information (which will contain the API key) as a parameter. The API key itself will likely be part of the `target_llm_config` passed to the higher-level `execute_llm_call` function and then formatted into the appropriate header (e.g., `Authorization: Bearer <key>` or `X-Api-Key: <key>`) by the logic within `LLM_Interaction_Gateway_Service` before making the actual HTTP call.
+*   **Security Note:** No complex credential management, encryption of keys in transit (beyond HTTPS provided by the LLM endpoint), or obfuscation is required by this gateway service. The keys are assumed to be provided securely to the gateway's configuration.
+
+## 5. Timeout Configuration
+
+*   **Description:** Requests to external LLMs can sometimes take a long time. It's crucial to have configurable timeouts to prevent indefinite blocking.
+*   **Types:**
+    *   Connect Timeout: Time to establish a connection.
+    *   Read Timeout: Time to wait for data after connection is established.
+*   **Implementation:** The internal HTTP client functions should accept timeout values (e.g., a single float for total timeout or a tuple for connect/read timeouts, compatible with the `requests` library). Default values should be sensible (e.g., 10 seconds for connect, 60-300 seconds for read, depending on typical LLM response times).
+
+## 6. Streaming Support (Optional but Recommended)
+
+*   **Description:** Some LLM APIs support streaming responses, which is useful for long generations or interactive applications.
+*   **Implementation:** If streaming is to be supported, the internal HTTP client function should have a parameter to enable it (e.g., `stream: bool`). When enabled, it should handle the response as a stream of events (e.g., Server-Sent Events or chunked transfer encoding) and yield data chunks. This detail will be further explored by Agent 3.4. For ST018 core logic, ensuring the HTTP client *can* make a request that initiates a stream is the primary concern.
+
+---
+
+20. **3.3 数据模型详细设计Agent (Data Model Detailed Design Agent):** 
+
+No database table structures or complex file organization schemas for PKBM are directly relevant to the *core HTTP call logic* of ST018 itself.
+
+Here is the Data Model Detailed Design:
+
+```python
+# Data Model Detailed Design for Subtask ST018
+# Document ID: DataModelDetailedDesign_ST018_v1.0
+# Version: 1.0
+# Timestamp: 2023-10-30T10:30:00Z # Illustrative
+# Generated By: 3.3 Data Model Detailed Design Agent
+# Based On: Context_ST018_v1.0, APIDetailedDesign_ST018_v1.0
+
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Tuple
+
+@dataclass
+class HttpRequestConfig:
+    """
+    Represents the configuration for a single outgoing HTTP request.
+    This dataclass will be used to pass all necessary parameters to the
+    core HTTP client function(s) within the LLM_Interaction_Gateway_Service.
+    """
+    url: str
+    method: str # e.g., "GET", "POST", "PUT", "DELETE"
+    headers: Optional[Dict[str, str]] = None
+    params: Optional[Dict[str, Any]] = None # URL query parameters
+    json_payload: Optional[Any] = None # For POST/PUT requests with JSON body
+    data_payload: Optional[Any] = None # For POST/PUT requests with form data or other types
+    timeout_seconds: float = 60.0 # Default total timeout for the request
+    # Alternatively, for more control (as used by 'requests' library):
+    # timeout_seconds_tuple: Optional[Tuple[float, float]] = None # (connect_timeout, read_timeout)
+    allow_redirects: bool = True
+    verify_ssl: bool = True # Per project guidelines, prioritize success; can be overridden for non-prod if absolutely necessary.
+
+@dataclass
+class HttpResponseData:
+    """
+    Represents the structured data returned from an HTTP request execution.
+    This helps in standardizing how HTTP responses are handled internally
+    after a call is made.
+    """
+    status_code: int
+    headers: Dict[str, str]
+    url: str # The final URL after any redirects
+    elapsed_time_seconds: float
+    json_body: Optional[Any] = None # Parsed JSON content if response is JSON
+    text_body: Optional[str] = None # Raw text content of the response
+    byte_content: Optional[bytes] = None # Raw byte content for non-text responses
+
+    # Method to attempt parsing JSON, to be called by the HTTP client logic
+    # def _parse_json_if_applicable(self, response_content: bytes, response_headers: Dict[str, str]):
+    #     content_type = response_headers.get("content-type", "").lower()
+    #     if "application/json" in content_type:
+    #         try:
+    #             self.json_body = json.loads(response_content.decode('utf-8')) # Assuming UTF-8
+    #         except json.JSONDecodeError:
+    #             # Log error, json_body remains None
+    #             self.text_body = response_content.decode('utf-8', errors='replace') # Store as text if JSON fails
+    #     else:
+    #         self.text_body = response_content.decode('utf-8', errors='replace')
+
+
+@dataclass
+class HttpRetryConfig:
+    """
+    Configuration for retry mechanisms when making HTTP calls.
+    This will be used by the LLM_Interaction_Gateway_Service to manage
+    retries for transient errors.
+    """
+    max_retries: int = 3
+    backoff_factor: float = 0.5  # Sleep for {backoff_factor} * (2 ** ({number_of_previous_attempts} - 1))
+    status_codes_to_retry_on: List[int] = field(default_factory=lambda: [429, 500, 502, 503, 504])
+    # List of HTTP status codes that should trigger a retry.
+    # 429: Too Many Requests
+    # 500: Internal Server Error
+    # 502: Bad Gateway
+    # 503: Service Unavailable
+    # 504: Gateway Timeout
+    retry_on_connection_error: bool = True
+    retry_on_timeout: bool = True
+
+# Note on LLMTargetConfig:
+# While the conceptual `execute_llm_call(prompt_data: dict, target_llm_config: dict)`
+# was mentioned in the context, the `target_llm_config` (containing API keys,
+# specific base URLs for an LLM provider) would typically be used by the
+# LLM_Interaction_Gateway_Service *before* constructing the `HttpRequestConfig`.
+# The `HttpRequestConfig` is what the *core HTTP call logic* (ST018) would directly consume.
+# For example, `target_llm_config.api_key` would be formatted into `HttpRequestConfig.headers`.
+# `target_llm_config.base_url` + endpoint_path would become `HttpRequestConfig.url`.
+# Therefore, `LLMTargetConfig` itself is not a direct data model for the *functions*
+# being implemented in ST018, but rather for the service class that orchestrates them.
+# The design of such a higher-level configuration dataclass would be part of the
+# detailed design for the overall LLM_Interaction_Gateway_Service class structure,
+# likely in task ST019 or the class/function logic design (Agent 3.4) for ST018/ST019.
+# For ST018, the above three dataclasses are the most directly relevant for the
+# functions making and handling HTTP calls.
+```
+
+21. **3.4 类与函数逻辑设计Agent (Class & Function Logic Design Agent):** 
+
+以下是我为子任务ST018生成的类与函数逻辑设计文档：
+
+```python
+# Class and Function Logic Design Document
+# Document ID: ClassFunctionLogicDesign_ST018_v1.0
+# Version: 1.0
+# Timestamp: 2023-10-30T11:00:00Z # Illustrative
+# Generated By: 3.4 Class & Function Logic Design Agent
+# For Subtask: ST018 - Implement the LLM_Interaction_Gateway_Service core logic for making HTTP calls.
+# Based On: Context_ST018_v1.0, APIDetailedDesign_ST018_v1.0, DataModelDetailedDesign_ST018_v1.0
+
+import time
+import logging
+import json
+from typing import Any, Callable, Dict, Optional, Tuple
+# Assume 'requests' library will be used for actual HTTP calls.
+# from requests import Request, Response, Session
+# from requests.exceptions import RequestException, Timeout, ConnectionError, HTTPError
+
+# Data models from DataModelDetailedDesign_ST018_v1.0 are assumed to be available:
+# from .data_models import HttpRequestConfig, HttpResponseData, HttpRetryConfig
+# For design purposes, their structure is referenced.
+
+# --- Custom Exceptions ---
+# These exceptions will be raised by the HTTP client utility to provide
+# more specific error information to the calling service (LLMInteractionGatewayService).
+
+classHttpClientBaseException(Exception):
+    """Base exception for HTTP client errors."""
+    def __init__(self, message: str, status_code: Optional[int] = None, url: Optional[str] = None):
+        super().__init__(message)
+        self.status_code = status_code
+        self.url = url
+        self.message = message
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}: {self.message} (URL: {self.url}, Status Code: {self.status_code})"
+
+classHttpRequestNonSuccessException(HttpClientBaseException):
+    """Raised when an HTTP request returns a non-2xx status code that is not specifically handled."""
+    pass
+
+classHttpConnectionErrorException(HttpClientBaseException):
+    """Raised for network connectivity issues (e.g., DNS failure, refused connection)."""
+    def __init__(self, message: str, url: Optional[str] = None):
+        super().__init__(message, url=url)
+
+classHttpRequestTimeoutException(HttpClientBaseException):
+    """Raised when a request times out."""
+    def __init__(self, message: str, url: Optional[str] = None):
+        super().__init__(message, url=url)
+
+classHttpTooManyRedirectsException(HttpClientBaseException):
+    """Raised when a request exceeds the maximum number of redirects."""
+    def __init__(self, message: str, url: Optional[str] = None):
+        super().__init__(message, url=url)
+
+# LLM-specific exceptions as outlined in APIDetailedDesign_ST018_v1.0,
+# which could be raised by this utility if status codes are directly mapped here.
+classLLMAuthenticationError(HttpRequestNonSuccessException):
+    """Raised for 401 Unauthorized or 403 Forbidden status codes."""
+    pass
+
+classLLMRateLimitError(HttpRequestNonSuccessException):
+    """Raised for 429 Too Many Requests status code."""
+    pass
+
+classLLMBadRequestError(HttpRequestNonSuccessException):
+    """Raised for 400 Bad Request or 422 Unprocessable Entity status codes."""
+    pass
+
+classLLMNotFoundError(HttpRequestNonSuccessException):
+    """Raised for 404 Not Found status code."""
+    pass
+
+classLLMServiceUnavailableError(HttpRequestNonSuccessException):
+    """Raised for 500, 502, 503, 504 status codes after retries are exhausted."""
+    pass
+
+
+# --- Core HTTP Client Utility Functions ---
+# These functions are intended to be part of a utility module, e.g., `http_client_utils.py`.
+
+# Initialize logger (as per coding standards, logging should be set up)
+logger = logging.getLogger(__name__)
+# Assume logger is configured elsewhere in the application.
+# For pseudocode, explicit logging calls will be shown.
+
+# --- Function: _send_single_http_request ---
+# Responsibility:
+#   Sends a single HTTP request using the 'requests' library.
+#   Handles basic request construction, timeout, SSL verification, and redirection.
+#   Parses the response into an HttpResponseData object or raises low-level exceptions.
+# Interface:
+#   Name: _send_single_http_request
+#   Parameters:
+#     config: HttpRequestConfig - Configuration for the HTTP request.
+#     session: Optional[requests.Session] - An optional requests.Session object to use for the call.
+#   Return Type:
+#     HttpResponseData - Contains the structured response data.
+#   Raises:
+#     HttpConnectionErrorException - For connection-related issues.
+#     HttpRequestTimeoutException - If the request times out.
+#     HttpTooManyRedirectsException - If too many redirects occur.
+#     HttpClientBaseException - For other unhandled 'requests' library exceptions.
+# Pseudocode/Logic:
+"""
+FUNCTION _send_single_http_request(config: HttpRequestConfig, session: Optional[SessionObject]) -> HttpResponseData:
+    logger.info(f"Preparing to send HTTP {config.method} request to {config.url}")
+
+    request_kwargs = {
+        "method": config.method.upper(),
+        "url": config.url,
+        "headers": config.headers,
+        "params": config.params,
+        "json": config.json_payload,
+        "data": config.data_payload,
+        "timeout": config.timeout_seconds,
+        "allow_redirects": config.allow_redirects,
+        "verify": config.verify_ssl
+    }
+
+    IF session IS None:
+        http_callable = requests.request // Actual 'requests.request'
+    ELSE:
+        http_callable = session.request // Actual 'session.request'
+
+    start_time = time.monotonic()
+    raw_response = None
+
+    TRY:
+        raw_response = http_callable(**request_kwargs)
+        elapsed_time = time.monotonic() - start_time
+        logger.info(f"Received response for {config.method} {config.url} - Status: {raw_response.status_code} in {elapsed_time:.4f}s")
+
+        response_data = HttpResponseData(
+            status_code=raw_response.status_code,
+            headers=dict(raw_response.headers),
+            url=raw_response.url,
+            elapsed_time_seconds=elapsed_time,
+            byte_content=raw_response.content
+        )
+
+        // Attempt to parse JSON body
+        content_type = raw_response.headers.get("content-type", "").lower()
+        IF "application/json" IN content_type AND raw_response.content:
+            TRY:
+                response_data.json_body = raw_response.json() // requests library's json() method
+            EXCEPT json.JSONDecodeError as e:
+                logger.warning(f"Failed to decode JSON response from {config.url}: {e}")
+                response_data.text_body = raw_response.text // Store as text if JSON fails
+            EXCEPT Exception as e: // Catch other potential errors from .json()
+                logger.warning(f"Error processing JSON response from {config.url}: {e}")
+                response_data.text_body = raw_response.text
+        ELSE IF raw_response.content:
+            response_data.text_body = raw_response.text
+
+        RETURN response_data
+
+    EXCEPT requests.exceptions.Timeout as e:
+        elapsed_time = time.monotonic() - start_time
+        logger.error(f"Request to {config.url} timed out after {elapsed_time:.4f}s: {e}")
+        RAISE HttpRequestTimeoutException(message=f"Request timed out: {e}", url=config.url)
+
+    EXCEPT requests.exceptions.ConnectionError as e:
+        elapsed_time = time.monotonic() - start_time
+        logger.error(f"Connection error for {config.url} after {elapsed_time:.4f}s: {e}")
+        RAISE HttpConnectionErrorException(message=f"Connection error: {e}", url=config.url)
+
+    EXCEPT requests.exceptions.TooManyRedirects as e:
+        elapsed_time = time.monotonic() - start_time
+        logger.error(f"Too many redirects for {config.url} after {elapsed_time:.4f}s: {e}")
+        RAISE HttpTooManyRedirectsException(message=f"Too many redirects: {e}", url=config.url)
+
+    EXCEPT requests.exceptions.RequestException as e: // Catch-all for other requests exceptions
+        elapsed_time = time.monotonic() - start_time
+        logger.error(f"HTTP request failed for {config.url} after {elapsed_time:.4f}s: {e}")
+        status_code_from_exception = e.response.status_code IF e.response IS NOT None ELSE None
+        RAISE HttpClientBaseException(message=f"HTTP request failed: {e}", status_code=status_code_from_exception, url=config.url)
+
+    FINALLY:
+        IF raw_response IS NOT None:
+            raw_response.close() // Ensure connection is closed
+END FUNCTION
+"""
+
+# --- Function: _map_status_to_llm_exception ---
+# Responsibility:
+#   Maps an HTTP status code from HttpResponseData to a specific LLM-related exception.
+# Interface:
+#   Name: _map_status_to_llm_exception
+#   Parameters:
+#     response_data: HttpResponseData - The response data containing the status code.
+#   Return Type:
+#     Optional[Callable] - The exception class to be raised, or None if no specific mapping.
+# Pseudocode/Logic:
+"""
+FUNCTION _map_status_to_llm_exception(response_data: HttpResponseData) -> Optional[Type[HttpRequestNonSuccessException]]:
+    status_code = response_data.status_code
+    error_message_detail = ""
+    IF response_data.json_body AND isinstance(response_data.json_body, dict):
+        error_detail = response_data.json_body.get("error")
+        IF isinstance(error_detail, dict):
+            error_message_detail = error_detail.get("message", "")
+        ELSE: # Sometime error is not nested
+            error_message_detail = response_data.json_body.get("message", "")
+    ELSE IF response_data.text_body:
+        error_message_detail = response_data.text_body[:200] # Truncate long messages
+
+    message = f"HTTP Error {status_code}. Detail: {error_message_detail}"
+
+    IF status_code == 400 OR status_code == 422:
+        RETURN LLMBadRequestError(message=message, status_code=status_code, url=response_data.url)
+    ELSE IF status_code == 401:
+        RETURN LLMAuthenticationError(message="Authentication failed (401). Check API key.", status_code=status_code, url=response_data.url)
+    ELSE IF status_code == 403:
+        RETURN LLMAuthenticationError(message="Forbidden (403). API key may lack permissions.", status_code=status_code, url=response_data.url)
+    ELSE IF status_code == 404:
+        RETURN LLMNotFoundError(message="Resource not found (404).", status_code=status_code, url=response_data.url)
+    ELSE IF status_code == 429:
+        RETURN LLMRateLimitError(message="Rate limit exceeded (429).", status_code=status_code, url=response_data.url)
+    ELSE IF status_code >= 500: // 500, 502, 503, 504 etc.
+        RETURN LLMServiceUnavailableError(message=message, status_code=status_code, url=response_data.url)
+    ELSE IF 400 <= status_code < 500: // Other 4xx errors
+        RETURN HttpRequestNonSuccessException(message=message, status_code=status_code, url=response_data.url)
+    ELSE: // Should not happen if called for non-2xx, but as a fallback
+        RETURN None
+END FUNCTION
+"""
+
+
+# --- Function: make_http_request_with_retry ---
+# Responsibility:
+#   Manages the execution of an HTTP request with a retry mechanism for transient failures.
+#   Uses _send_single_http_request for individual attempts.
+#   Interprets response status codes to raise appropriate LLM-specific or general HTTP exceptions.
+# Interface:
+#   Name: make_http_request_with_retry
+#   Parameters:
+#     request_config: HttpRequestConfig - Configuration for the HTTP request.
+#     retry_config: HttpRetryConfig - Configuration for the retry behavior.
+#     session: Optional[requests.Session] - An optional requests.Session object.
+#   Return Type:
+#     HttpResponseData - Contains the structured response data if successful.
+#   Raises:
+#     HttpConnectionErrorException, HttpRequestTimeoutException, HttpTooManyRedirectsException
+#     LLMAuthenticationError, LLMRateLimitError, LLMBadRequestError, LLMNotFoundError, LLMServiceUnavailableError
+#     HttpRequestNonSuccessException (for unmapped non-2xx errors)
+#     HttpClientBaseException (for other errors)
+# Pseudocode/Logic:
+"""
+FUNCTION make_http_request_with_retry(
+    request_config: HttpRequestConfig,
+    retry_config: HttpRetryConfig,
+    session: Optional[SessionObject] = None
+) -> HttpResponseData:
+
+    last_exception = None
+    FOR attempt FROM 0 TO retry_config.max_retries:
+        logger.info(f"Attempt {attempt + 1} of {retry_config.max_retries + 1} for {request_config.method} {request_config.url}")
+        TRY:
+            response = _send_single_http_request(config=request_config, session=session)
+
+            IF 200 <= response.status_code < 300: // Success
+                RETURN response
+
+            // Handle non-success status codes
+            specific_llm_exception = _map_status_to_llm_exception(response)
+
+            IF specific_llm_exception IS NOT None:
+                // Check if this status code is in the retry list
+                IF response.status_code IN retry_config.status_codes_to_retry_on AND attempt < retry_config.max_retries:
+                    last_exception = specific_llm_exception
+                    logger.warning(f"Attempt {attempt + 1} failed with retryable status {response.status_code}. Retrying...")
+                    // Proceed to sleep and retry
+                ELSE: // Not retryable or max retries reached for this status
+                    logger.error(f"Request failed with status {response.status_code}. Raising {specific_llm_exception.__class__.__name__}.")
+                    RAISE specific_llm_exception
+            ELSE: // Should not happen if _map_status_to_llm_exception is comprehensive for non-2xx
+                  // But if it does, or for other non-2xx not mapped to LLM specific ones
+                IF 400 <= response.status_code < 600: // Generic non-2xx
+                    generic_exception = HttpRequestNonSuccessException(
+                        message=f"HTTP request failed with status code {response.status_code}. Body: {response.text_body[:200] if response.text_body else ''}",
+                        status_code=response.status_code,
+                        url=request_config.url
+                    )
+                    IF response.status_code IN retry_config.status_codes_to_retry_on AND attempt < retry_config.max_retries:
+                        last_exception = generic_exception
+                        logger.warning(f"Attempt {attempt + 1} failed with retryable status {response.status_code}. Retrying...")
+                    ELSE:
+                        RAISE generic_exception
+                ELSE: // Should ideally be a 2xx or a mapped error
+                    logger.error(f"Unexpected status code {response.status_code} encountered.")
+                    // This case should be rare if logic is correct. Fallback to generic non-success.
+                    RAISE HttpRequestNonSuccessException(
+                        message=f"Unexpected HTTP status: {response.status_code}",
+                        status_code=response.status_code,
+                        url=request_config.url
+                    )
+
+
+        EXCEPT (HttpConnectionErrorException, HttpRequestTimeoutException) as e:
+            last_exception = e
+            is_conn_error_retryable = isinstance(e, HttpConnectionErrorException) AND retry_config.retry_on_connection_error
+            is_timeout_retryable = isinstance(e, HttpRequestTimeoutException) AND retry_config.retry_on_timeout
+
+            IF (is_conn_error_retryable OR is_timeout_retryable) AND attempt < retry_config.max_retries:
+                logger.warning(f"Attempt {attempt + 1} failed with {e.__class__.__name__}. Retrying...")
+                // Proceed to sleep and retry
+            ELSE: // Not retryable or max retries reached
+                logger.error(f"Request failed with non-retryable or maxed-out {e.__class__.__name__}. Raising.")
+                RAISE e // Re-raise the caught specific exception
+
+        EXCEPT HttpClientBaseException as e: // Catch other HttpClientBaseException from _send_single_http_request
+            last_exception = e
+            logger.error(f"Attempt {attempt + 1} failed with unhandled HttpClientBaseException: {e}. Not retrying this type.")
+            RAISE e // Re-raise immediately, not typically retryable unless specifically configured
+
+        // If we are going to retry, calculate sleep time
+        IF attempt < retry_config.max_retries:
+            sleep_duration = retry_config.backoff_factor * (2 ** attempt)
+            logger.info(f"Sleeping for {sleep_duration:.2f} seconds before next retry.")
+            time.sleep(sleep_duration)
+
+    // If loop finishes, all retries were exhausted
+    logger.error(f"All {retry_config.max_retries + 1} attempts failed for {request_config.url}. Last error: {last_exception}")
+    IF last_exception IS NOT None:
+        RAISE last_exception
+    ELSE:
+        // Should not happen if logic is correct, but as a fallback
+        RAISE HttpClientBaseException(message="All retries failed without a specific last exception.", url=request_config.url)
+
+END FUNCTION
+"""
+
+# --- Considerations for LLMInteractionGatewayService class ---
+# The functions designed above (`_send_single_http_request`, `make_http_request_with_retry`, `_map_status_to_llm_exception`)
+# are low-level HTTP utilities.
+# The `LLMInteractionGatewayService` class itself (likely designed as part of ST019 or refined for ST018's integration)
+# would use `make_http_request_with_retry`.
+#
+# Example structure for the service class method (conceptual):
+#
+# CLASS LLMInteractionGatewayService:
+#     // ... constructor, config loading ...
+#
+#     FUNCTION execute_llm_call(self, provider_config: LLMProviderConfig, request_details: LLMRequestDetails) -> LLMResponse:
+#         // 1. Construct HttpRequestConfig from provider_config and request_details
+#         //    (e.g., build URL, headers with API key, JSON payload)
+#         http_req_config = self._build_http_request_config(provider_config, request_details)
+#
+#         // 2. Define HttpRetryConfig (could be part of provider_config or service default)
+#         retry_cfg = self._get_retry_config(provider_config)
+#
+#         // 3. Call the utility function
+#         http_response_data = make_http_request_with_retry(
+#             request_config=http_req_config,
+#             retry_config=retry_cfg,
+#             session=self.get_session_for_provider(provider_config) // Potentially use sessions
+#         )
+#
+#         // 4. Parse http_response_data.json_body into a provider-specific LLMResponse object
+#         llm_response = self._parse_llm_response(provider_config, http_response_data)
+#
+#         RETURN llm_response
+#
+# END CLASS
+#
+# The design of `LLMProviderConfig`, `LLMRequestDetails`, `LLMResponse` and the helper methods
+# `_build_http_request_config`, `_get_retry_config`, `_parse_llm_response` would be part of the
+# service-level design, not strictly ST018's "core HTTP call logic". ST018 provides the robust
+# `make_http_request_with_retry` foundation.
 ```
 
 22. **3.5 文件与目录结构规划Agent (File & Directory Structure Planner Agent):**
 
-**File & Directory Structure Plan Output:**
+My goal is to define the necessary new files and directories for this subtask, ensuring the structure aligns with Python best practices (while adhering to your specific coding standards, especially regarding modularity and the absence of comments) and the overall architecture.
+
+**Input Analysis:**
+
+1.  **Current Subtask Context Package (`Context_ST018_v1.0`):** This confirms the task is foundational for the `LLM_Interaction_Gateway_Service` and involves implementing the actual HTTP communication logic, likely using Python's `requests` library.
+2.  **API Detailed Design (`APIDetailedDesign_ST018_v1.0`):** This describes the *external* LLM APIs the gateway will call, not an API exposed by the gateway itself for ST018. It guides the capabilities needed in our HTTP client logic.
+3.  **Data Model Detailed Design (`DataModelDetailedDesign_ST018_v1.0`):** This provided crucial Python `@dataclass` definitions: `HttpRequestConfig`, `HttpResponseData`, and `HttpRetryConfig`. These will need a home.
+4.  **Class & Function Logic Design (`ClassFunctionLogicDesign_ST018_v1.0`):** This is the most direct input, outlining:
+    *   Custom exceptions (`HttpClientBaseException`, `HttpRequestNonSuccessException`, etc.).
+    *   Core utility functions (`_send_single_http_request`, `_map_status_to_llm_exception`, `make_http_request_with_retry`).
+    *   The note that these are "intended to be part of a utility module, e.g., `http_client_utils.py`".
+    *   A conceptual `LLMInteractionGatewayService` class which would *use* these utilities (implementation of this class is likely ST019).
+5.  **PKBM (Project Knowledge Base Manager):** For this run, I assume no prior project file structure exists for the `LLM_Interaction_Gateway_Service` component. I will be proposing a new structure for it.
+6.  **Coding Standards:** Emphasis on modularity, Python data classes for configuration, clear error handling, and specific naming conventions. No comments/docstrings.
+
+**File and Directory Structure Plan for ST018:**
+
+Based on the inputs, the primary outputs of ST018 are Python modules containing data models, custom exceptions, and the HTTP client utility functions. These will form part of the `LLM_Interaction_Gateway_Service` component.
+
+Assuming a project root directory named `multi_agent_dev_system` (or similar, this can be adjusted) and an application-specific directory, say `src` or `app`, I propose the following structure. For simplicity and following common Python project layouts, I'll use `app` as the main application code directory.
+
+**Proposed Directory Structure (New Additions Highlighted):**
+
+```
+multi_agent_dev_system/
+├── app/
+│   ├── __init__.py
+│   ├── services/
+│   │   ├── __init__.py
+│   │   └── llm_gateway_service/      <-- NEW DIRECTORY for ST018 and related
+│   │       ├── __init__.py           <-- NEW FILE
+│   │       ├── data_models.py        <-- NEW FILE (for HttpRequestConfig, etc.)
+│   │       ├── exceptions.py         <-- NEW FILE (for custom HTTP exceptions)
+│   │       └── http_client.py        <-- NEW FILE (for core HTTP call logic)
+│   ├── agents/
+│   │   └── ... (other agent implementations)
+│   ├── web_ui_service/
+│   │   └── ... (Flask app specifics)
+│   └── workflow_management_service/
+│       └── ...
+├── pkbm_root/
+│   └── ... (knowledge base artifacts)
+└── ... (other project files like main.py, tests/, etc.)
+```
+
+**Detailed Plan:**
+
+1.  **New Directories to Create:**
+    *   `app/services/llm_gateway_service/`
+        *   **Rationale:** This directory will house all modules specifically related to the `LLM_Interaction_Gateway_Service` component, promoting modularity as per the coding standards and the HLDD.
+
+2.  **New Files to Create for Subtask ST018:**
+    *   `app/services/llm_gateway_service/__init__.py`
+        *   **Path:** `app/services/llm_gateway_service/__init__.py`
+        *   **Content:** Can be initially empty.
+        *   **Rationale:** Makes the `llm_gateway_service` directory a Python package, allowing modules within it to be imported using dot notation (e.g., `from app.services.llm_gateway_service.http_client import make_http_request_with_retry`). This will also be where the `LLMInteractionGatewayService` class (from ST019) might be exposed for easier import.
+    *   `app/services/llm_gateway_service/data_models.py`
+        *   **Path:** `app/services/llm_gateway_service/data_models.py`
+        *   **Content:** Will contain the Python `@dataclass` definitions: `HttpRequestConfig`, `HttpResponseData`, and `HttpRetryConfig` as specified in `DataModelDetailedDesign_ST018_v1.0`.
+        *   **Rationale:** Separates data structure definitions from logic, improving organization and adhering to the principle of single responsibility for modules.
+    *   `app/services/llm_gateway_service/exceptions.py`
+        *   **Path:** `app/services/llm_gateway_service/exceptions.py`
+        *   **Content:** Will contain the custom exception classes defined in `ClassFunctionLogicDesign_ST018_v1.0` (e.g., `HttpClientBaseException`, `HttpRequestNonSuccessException`, `LLMAuthenticationError`, etc.).
+        *   **Rationale:** Centralizes custom exceptions related to HTTP client operations, making them easy to import and manage.
+    *   `app/services/llm_gateway_service/http_client.py`
+        *   **Path:** `app/services/llm_gateway_service/http_client.py`
+        *   **Content:** Will contain the core HTTP client functions: `_send_single_http_request`, `_map_status_to_llm_exception`, and `make_http_request_with_retry` as detailed in `ClassFunctionLogicDesign_ST018_v1.0`. This module will import from `data_models.py` and `exceptions.py` within the same package.
+        *   **Rationale:** This module encapsulates the fundamental HTTP communication logic, as per ST018's description.
+
+3.  **Existing Files to Modify:**
+    *   For subtask ST018 itself, no existing *code* files are being modified. We are creating new modules that will be *used by* other parts of the `LLM_Interaction_Gateway_Service` (likely implemented in ST019, e.g., in a `service.py` file within the `llm_gateway_service` package).
+
+4.  **Python `__init__.py` Files:**
+    *   `app/__init__.py` (if `app` is the top-level source dir)
+    *   `app/services/__init__.py`
+        *   **Rationale:** These ensure that `app` and `app.services` are treated as Python packages, allowing for structured imports. They can be empty.
+
+This plan establishes a clean, modular structure for the `LLM_Interaction_Gateway_Service`'s core HTTP utilities, aligning with the provided design documents and general Python project organization principles.
+
+I will now save this plan to the PKBM.
+
+**Output to PKBM:**
+
+*   **Filename:** `FileStructurePlan_ST018_v1.0.json`
+*   **Content:**
 
 ```json
 {
-  "document_id": "FileStructurePlan_ST016_v1.0",
-  "sub_task_id": "ST016",
-  "sub_task_description": "Implement the Project_Knowledge_Base_Manager_Service (PKBM_Service) core logic for file operations.",
+  "document_id": "FileStructurePlan_ST018_v1.0",
   "version": "1.0",
-  "timestamp": "CURRENT_TIMESTAMP",
-  "generated_by_agent": "3.5 File & Directory Structure Planner Agent",
-  "based_on_context_package": "CP_ST016_v1.0",
-  "based_on_detailed_designs": [
-    "DataModelDetailedDesign_ST016_v1.0",
-    "ClassFunctionLogicDesign_ST016_v1.0"
+  "timestamp": "2023-10-30T11:15:00Z",
+  "generated_by": "3.5 File & Directory Structure Planner Agent",
+  "subtask_id": "ST018",
+  "subtask_description": "Implement the LLM_Interaction_Gateway_Service core logic for making HTTP calls.",
+  "assumptions": [
+    "Project root directory is 'multi_agent_dev_system'.",
+    "Main application source code resides in an 'app/' subdirectory.",
+    "No conflicting file structure for 'LLM_Interaction_Gateway_Service' currently exists."
   ],
-  "project_structure_plan": {
-    "comment": "This plan outlines the initial project source code structure focusing on ST016. The actual PKBM data storage (e.g., /path/to/project_pkbm_root/) is managed BY this service, not part of its source code structure.",
-    "project_root_name": "MAS_Simplified_Project",
-    "source_code_root_relative_to_project_root": "mas_core/",
-    "new_directories_to_create": [
-      {
-        "path_relative_to_project_root": "mas_core/",
-        "description": "Main source code directory for the Multi-Agent System."
-      },
-      {
-        "path_relative_to_project_root": "mas_core/services/",
-        "description": "Package for all core service components like PKBM, Workflow, LLM Gateway."
-      },
-      {
-        "path_relative_to_project_root": "mas_core/utils/",
-        "description": "Package for utility modules, including custom exceptions if they become general."
-      }
-    ],
-    "new_files_to_create": [
-      {
-        "path_relative_to_project_root": "mas_core/__init__.py",
-        "description": "Makes 'mas_core' a Python package."
-      },
-      {
-        "path_relative_to_project_root": "mas_core/services/__init__.py",
-        "description": "Makes 'services' a Python sub-package."
-      },
-      {
-        "path_relative_to_project_root": "mas_core/utils/__init__.py",
-        "description": "Makes 'utils' a Python sub-package."
-      },
-      {
-        "path_relative_to_project_root": "mas_core/utils/custom_exceptions.py",
-        "description": "File to store custom project-wide exceptions. PKBM-specific exceptions defined in ClassFunctionLogicDesign_ST016_v1.0 will initially reside here or directly in pkbm_service.py if not broadly reusable."
-      },
-      {
-        "path_relative_to_project_root": "mas_core/services/pkbm_service.py",
-        "description": "The Python module implementing the PKBMService class and its core logic as defined in ClassFunctionLogicDesign_ST016_v1.0 for sub-task ST016. PKBM-specific exceptions can also be defined here if not moved to custom_exceptions.py."
-      }
-    ],
-    "existing_files_to_modify": [],
-    "rationale_and_conventions": [
-      "The structure follows common Python project organization practices.",
-      "A top-level source directory `mas_core/` is used to encapsulate all primary application logic.",
-      "`services/` sub-package groups different service components, promoting modularity as per HighLevelArchitectureDesignDocument_v1.0.",
-      "Future services (Workflow_Management_Service, LLM_Interaction_Gateway_Service) would also reside as modules within `mas_core/services/`.",
-      "Agent definitions (AutoGen based) would likely go into a `mas_core/agents/` package.",
-      "Web UI (Flask) components would likely go into a `mas_core/web_ui/` package.",
-      "`__init__.py` files are created to define Python packages, enabling proper imports.",
-      "Custom exceptions are planned to be in `mas_core/utils/custom_exceptions.py` for better organization if they become reusable, or can be co-located if very specific. For ST016, the `PKBMError` hierarchy will be implemented within `pkbm_service.py` or `custom_exceptions.py` based on reusability assessment during coding."
-    ],
-    "pkbm_data_directory_note": "The directory structure defined in `DataModelDetailedDesign_ST016_v1.0` (e.g., `00_ProjectMetaData`, `01_RawRequirements`) refers to the internal organization of the *data managed by* the PKBMService. The root of this data structure (e.g., `/path/to/project_pkbm_root/`) will be a configuration parameter passed to the `PKBMService` class instance and is separate from the project's source code structure outlined here."
-  }
+  "new_directories": [
+    {
+      "path": "app/services/llm_gateway_service/",
+      "rationale": "Dedicated directory for all modules of the LLM_Interaction_Gateway_Service component, promoting modularity."
+    }
+  ],
+  "new_files": [
+    {
+      "path": "app/services/llm_gateway_service/__init__.py",
+      "description": "Makes 'llm_gateway_service' a Python package. Can be initially empty.",
+      "rationale": "Enables structured imports from and within the llm_gateway_service package."
+    },
+    {
+      "path": "app/services/llm_gateway_service/data_models.py",
+      "description": "Contains @dataclass definitions: HttpRequestConfig, HttpResponseData, HttpRetryConfig.",
+      "source_design_doc": "DataModelDetailedDesign_ST018_v1.0",
+      "rationale": "Separates data structure definitions from operational logic."
+    },
+    {
+      "path": "app/services/llm_gateway_service/exceptions.py",
+      "description": "Contains custom HTTP client exception classes (HttpClientBaseException, LLMAuthenticationError, etc.).",
+      "source_design_doc": "ClassFunctionLogicDesign_ST018_v1.0",
+      "rationale": "Centralizes custom exceptions for HTTP client operations."
+    },
+    {
+      "path": "app/services/llm_gateway_service/http_client.py",
+      "description": "Contains core HTTP client functions (_send_single_http_request, make_http_request_with_retry, etc.). Will import from local data_models.py and exceptions.py.",
+      "source_design_doc": "ClassFunctionLogicDesign_ST018_v1.0",
+      "rationale": "Encapsulates the fundamental HTTP communication logic for ST018."
+    }
+  ],
+  "modified_files": [],
+  "notes": "This plan focuses on ST018. The LLMInteractionGatewayService class itself, which will use these utilities, is expected to be implemented in a subsequent subtask (e.g., ST019) likely within a 'service.py' file in the 'app/services/llm_gateway_service/' package."
 }
 ```
 
 23. **3.6 安全考量与检查点定义Agent (Security Considerations & Checkpoint Definer Agent):**
 
-**Security Considerations & Checkpoint Definer Agent Output:**
+## Security Considerations Report
 
-```json
-{
-  "document_id": "SecurityConsiderations_ST016_v1.0",
-  "sub_task_id": "ST016",
-  "sub_task_description": "Implement the Project_Knowledge_Base_Manager_Service (PKBM_Service) core logic for file operations.",
-  "version": "1.0",
-  "timestamp": "CURRENT_TIMESTAMP",
-  "generated_by_agent": "3.6 Security Considerations & Checkpoint Definer Agent",
-  "based_on_context_package": "CP_ST016_v1.0",
-  "based_on_detailed_designs": [
-    "APIDetailedDesign_ST016_v1.0",
-    "DataModelDetailedDesign_ST016_v1.0",
-    "ClassFunctionLogicDesign_ST016_v1.0"
-  ],
-  "security_assessment": {
-    "overall_security_posture_and_directives": {
-      "summary": "The project operates under an explicit directive to prioritize functionality, simplicity, and operational success within an assumed 'absolutely secure environment'. Security measures that could introduce complexity or hinder ease of use are to be deprioritized or omitted. All permissions are considered fully open.",
-      "source_of_directive": "User instruction during Agent 3.6 invocation."
-    },
-    "analysis_scope_for_st016": "The PKBM_Service core logic for file operations involves creating, reading, writing, and finding files within a defined directory structure. This inherently touches upon file system interactions.",
-    "potential_risk_areas_considered_and_rationale_for_deprioritization": [
-      {
-        "risk_area": "Path Traversal / Arbitrary File Access",
-        "standard_concern": "Maliciously crafted input (e.g., for category names, artifact identifiers) could lead to accessing files outside the intended PKBM root directory.",
-        "project_specific_handling": "The `ClassFunctionLogicDesign_ST016_v1.0` for `PKBMService` includes: \n1. `_get_category_path`: Validates `category_name` against a predefined list. \n2. `retrieve_artifact_content`: Includes a basic check that `full_artifact_path` starts with `self.root_dir`. \nThese checks are primarily for correctness and robustness, aligning with the project's priorities. No *additional* complex security-specific path sanitization or validation layers are recommended due to the 'absolutely secure environment' and 'simplicity first' directives. The existing design for correctness sufficiently covers this for the stated operational context."
-      },
-      {
-        "risk_area": "Insecure File Permissions",
-        "standard_concern": "Files created might have overly permissive OS-level permissions, potentially allowing unauthorized access if the environment assumption was breached.",
-        "project_specific_handling": "Per user directive, 'all permissions etc., should be fully open'. The system will rely on default OS file creation permissions. No specific umask settings or permission-modifying calls (e.g., `os.chmod`) will be implemented by the `PKBMService` to restrict permissions, as this would contradict the directive and potentially add complexity or cause operational failures in some environments if not configured correctly."
-      },
-      {
-        "risk_area": "Data Exposure / Confidentiality",
-        "standard_concern": "Artifacts stored in PKBM might contain sensitive information. Without encryption or access controls, this data is readable by anyone with file system access.",
-        "project_specific_handling": "The 'absolutely secure environment' directive implies that file system access itself is controlled. Encryption at rest for PKBM artifacts is out of scope as it would add significant complexity. The system assumes that the environment handles the confidentiality of the PKBM data at the file system/OS level."
-      },
-      {
-        "risk_area": "Denial of Service (DoS) via Resource Exhaustion",
-        "standard_concern": "Large file uploads or numerous small file creations could exhaust disk space or inodes.",
-        "project_specific_handling": "This is primarily an operational/capacity planning concern rather than a direct security vulnerability in the context of an internal tool. The `PKBMService` logic does not include specific quotas or size limits for artifacts, prioritizing simplicity. It's assumed the 'absolutely secure environment' implies trusted users who will not intentionally cause DoS, and operational monitoring would handle resource limits."
-      },
-      {
-        "risk_area": "Race Conditions in File Operations",
-        "standard_concern": "Concurrent writes to the same file or directory manipulations can lead to data corruption.",
-        "project_specific_handling": "The `ClassFunctionLogicDesign_ST016_v1.0` specifies a `threading.Lock` (`write_lock`) within the `PKBMService` to serialize write operations (`store_artifact`). This is a robustness measure essential for data integrity and functionality, aligning with project priorities. No further complex distributed locking mechanisms are considered necessary."
-      },
-      {
-        "risk_area": "Error Handling and Information Leakage",
-        "standard_concern": "Verbose error messages could leak internal system details.",
-        "project_specific_handling": "The `ClassFunctionLogicDesign_ST016_v1.0` proposes custom exceptions. Error messages should be logged comprehensively for debugging (internal use) but user-facing errors (if any propagate that far) should be managed by the UI layer. Prioritizing functionality and debuggability means detailed internal logging is preferred. Since the environment is 'absolutely secure', leakage of internal paths or error details in logs accessible only within this secure environment is not a primary concern."
-      }
-    ],
-    "recommended_security_checkpoints_and_measures_for_st016_implementation": {
-      "summary": "Given the explicit project directives, no additional security-specific checkpoints or complex hardening measures are recommended for ST016 beyond what is already incorporated for basic robustness and correctness in the `ClassFunctionLogicDesign_ST016_v1.0`.",
-      "checkpoints_aligned_with_robustness_and_functionality": [
-        {
-          "id": "ST016_SEC_CP01",
-          "description": "Ensure the implementation of `_get_category_path` strictly validates category names against the predefined list from `DataModelDetailedDesign_ST016_v1.0`.",
-          "relevance": "Primarily for correctness and preventing accidental writes to incorrect locations. Satisfies basic path control."
-        },
-        {
-          "id": "ST016_SEC_CP02",
-          "description": "Ensure the `retrieve_artifact_content` method validates that the `full_artifact_path` parameter is within the configured `self.root_dir` before attempting file access.",
-          "relevance": "Primarily for correctness and ensuring the service operates within its designated scope. Satisfies basic path control."
-        },
-        {
-          "id": "ST016_SEC_CP03",
-          "description": "Ensure the `write_lock` is correctly implemented and used in `store_artifact` to serialize write operations, preventing data corruption from concurrent internal calls.",
-          "relevance": "Critical for data integrity and functional correctness."
-        },
-        {
-          "id": "ST016_SEC_CP04",
-          "description": "Implement robust error handling for all file I/O operations (e.g., using try-except blocks for `IOError`, `OSError`, `PermissionError`), logging errors appropriately for debugging.",
-          "relevance": "Critical for functional stability and diagnosing issues. Detailed logs are acceptable within the assumed secure environment."
-        }
-      ],
-      "measures_explicitly_omitted_due_to_project_directives": [
-        "Complex input sanitization routines for filenames/paths beyond basic cleaning for filesystem compatibility.",
-        "Implementation of specific file permission settings (e.g., `os.chmod`).",
-        "Encryption of data at rest.",
-        "Resource quotas or file size limitations within the `PKBMService` logic.",
-        "Obfuscation of error messages intended for internal logs."
-      ]
-    },
-    "key_takeaway_for_implementation_team": "Focus on implementing the `PKBMService` as per the `ClassFunctionLogicDesign_ST016_v1.0` with an emphasis on robust file operations, correct handling of paths as designed, and effective error logging. Assume the operating environment is secure and permissions are open. Do not introduce security measures that add complexity or could impede straightforward operation and configuration."
-  }
-}
-```
+**Document ID:** `SecurityConsiderations_ST018_v1.0`
+**Version:** 1.0
+**Timestamp:** `2023-10-30T11:30:00Z` (Illustrative)
+**Generated By:** 3.6 Security Considerations & Checkpoint Definer Agent
+**For Subtask:** ST018 - Implement the LLM_Interaction_Gateway_Service core logic for making HTTP calls.
+
+### 1. Introduction
+
+This document outlines the security considerations for subtask ST018, which involves implementing the core HTTP client logic for the `LLM_Interaction_Gateway_Service`.
+
+**Overriding Project Directive:** As per explicit user requirements, this project is designed for operation within an absolutely secure environment. Consequently, security measures are to be **completely deprioritized**. The absolute priorities are functionality, success rate, ease of configuration, and simplicity of use. All permissions should be as open as possible to prevent failures due to security settings. Standard security practices like OWASP Top 10 considerations, strict input validation for security purposes, complex authentication/authorization schemes, and rigorous secret management are **not applicable or will be intentionally simplified** for this subtask and the project as a whole, unless they directly support the primary goals of functionality and simplicity without causing obstruction.
+
+### 2. Scope of Analysis
+
+This analysis focuses on the design artifacts for ST018:
+*   The Python functions responsible for making outbound HTTP requests (`_send_single_http_request`, `make_http_request_with_retry`).
+*   The data models used for configuring these requests (`HttpRequestConfig`, `HttpRetryConfig`) and representing responses (`HttpResponseData`).
+*   The custom exceptions related to HTTP operations.
+
+### 3. General Security Stance for ST018
+
+Consistent with the project-wide directive:
+*   **No new security complexities:** The implementation should avoid introducing any security features that could complicate configuration, deployment, or usage.
+*   **Open by default:** Where choices exist (e.g., SSL verification), flexibility to ensure connection success is paramount, even if it means less stringent settings for specific non-production environments.
+*   **Focus on robustness for functionality:** Error handling and retry mechanisms are important for success rate, which indirectly contributes to a stable (though not "secure" in the traditional sense) service.
+
+### 4. Specific Considerations and (Non-)Recommendations
+
+#### 4.1. API Key Handling for External LLMs
+*   **Context:** The gateway will call external LLM APIs that require API keys.
+*   **Standard Security Concern (Dismissed):** Secure storage, rotation, and transmission of API keys.
+*   **Project Approach (ST018 & LLM Gateway Service):**
+    *   API keys will be passed to the HTTP client functions as part of the request configuration (e.g., within `HttpRequestConfig.headers`).
+    *   The `LLM_Interaction_Gateway_Service` (likely ST019) will be responsible for obtaining these keys from its own configuration (e.g., Python dataclass, direct environment variables if simplest for user).
+    *   **No encryption or obfuscation of keys within the ST018 logic is required or desired.** Simplicity of passing the key in the header is key.
+    *   **Checkpoint:** Ensure the HTTP client logic correctly incorporates headers provided in `HttpRequestConfig.headers` without modification or added security layers.
+
+#### 4.2. SSL/TLS Certificate Verification
+*   **Context:** Outbound HTTPS calls to external LLMs.
+*   **Standard Security Concern (Partially Relaxed):** Always verify SSL/TLS certificates to prevent Man-in-the-Middle (MitM) attacks.
+*   **Project Approach:**
+    *   The `HttpRequestConfig` data model includes a `verify_ssl: bool = True` field. This default is good practice.
+    *   **Crucially, this MUST remain configurable.** If a user encounters issues connecting to a specific (e.g., local, non-production, or misconfigured) LLM endpoint due to SSL verification, they MUST be able to set `verify_ssl = False` for that specific request configuration to ensure functionality. This aligns with "preventing failures due to security settings."
+    *   **Checkpoint:** The `_send_single_http_request` function must honor the `verify_ssl` flag from `HttpRequestConfig` when using the `requests` library.
+
+#### 4.3. Input Validation (of parameters to the HTTP client functions)
+*   **Context:** The HTTP client functions receive URLs, headers, payloads.
+*   **Standard Security Concern (Dismissed for Security):** Validating inputs to prevent injection attacks (e.g., CRLF injection in headers, SSRF if URLs were constructed from less trusted input – though here URLs are for specific LLMs).
+*   **Project Approach:**
+    *   The primary consumer of these HTTP client functions is the `LLM_Interaction_Gateway_Service` itself, which is assumed to construct valid `HttpRequestConfig` objects.
+    *   No specific security-focused input sanitization is required within ST018 beyond what the `requests` library itself might do for basic well-formedness.
+    *   The design assumes that upstream components generating data for LLM prompts are responsible for their content.
+    *   **Checkpoint:** Focus on ensuring the `requests` library calls are made correctly with the provided data. Avoid adding custom validation logic that could break valid, albeit unusual, inputs needed for certain LLM APIs.
+
+#### 4.4. Output Handling (from external LLMs)
+*   **Context:** The HTTP client functions retrieve responses from LLMs.
+*   **Standard Security Concern (Dismissed):** Sanitizing output from LLMs if it's rendered directly to users (to prevent XSS, etc.).
+*   **Project Approach:**
+    *   The output from these HTTP utilities is `HttpResponseData`, which is then processed by the `LLM_Interaction_Gateway_Service` and subsequently by other internal agents. It's not directly rendered to a web user by ST018's logic.
+    *   No output sanitization is required in ST018.
+    *   **Checkpoint:** Ensure the full, raw response (or parsed JSON) is available in `HttpResponseData` for upstream processing.
+
+#### 4.5. Logging
+*   **Context:** Logging HTTP requests and responses for debugging.
+*   **Standard Security Concern (Dismissed):** Avoiding logging of sensitive data like API keys or full request/response payloads if they contain PII or secrets.
+*   **Project Approach:**
+    *   Comprehensive logging is crucial for debugging and ensuring "success rate."
+    *   Given the "absolutely secure environment" assumption, logging of headers (which might include API keys if not careful, though `requests` usually redacts `Authorization`) and potentially snippets of payloads for debugging purposes is acceptable if it aids in problem resolution. The `ClassFunctionLogicDesign_ST018_v1.0` already includes logging.
+    *   **Checkpoint:** Ensure logging is informative for debugging. If `requests` library automatically redacts `Authorization` headers in its own logging (if used), that's fine. The custom logging within ST018 functions should prioritize debugging information. For this project, explicitly logging the URL and status is good; logging full request/response bodies should be done judiciously if it aids debugging, without concern for data sensitivity *within this assumed secure environment*.
+
+#### 4.6. Retry Mechanisms and Resource Usage
+*   **Context:** The `make_http_request_with_retry` function implements retries.
+*   **Standard Security Concern (Minimal relevance):** Overly aggressive retries could contribute to DoS against an external service or exhaust local resources.
+*   **Project Approach:**
+    *   The `HttpRetryConfig` (max_retries, backoff_factor) provides basic control. This is sufficient.
+    *   No complex circuit breaker patterns are needed.
+    *   **Checkpoint:** The retry logic as designed in `ClassFunctionLogicDesign_ST018_v1.0` using `HttpRetryConfig` is adequate.
+
+#### 4.7. Error Handling
+*   **Context:** Handling various HTTP errors.
+*   **Project Approach (Good for Robustness):** The `ClassFunctionLogicDesign_ST018_v1.0` defines a good set of custom exceptions. This is excellent for functionality and debugging, as it allows the calling service to understand failures clearly.
+*   **Checkpoint:** No additional security-specific error handling is needed. The current design for propagating errors is suitable.
+
+### 5. Security Checkpoints / Implementation Requirements for ST018
+
+Based on the above and the project's unique security stance, the "security" requirements are minimal and focused on not obstructing functionality:
+
+1.  **Configurable SSL Verification:** The `_send_single_http_request` function **must** use the `verify_ssl` boolean from `HttpRequestConfig` to control SSL certificate verification in the underlying `requests` call. It should default to `True` in the `HttpRequestConfig` dataclass but be overridable.
+2.  **Direct Header Passthrough:** The HTTP client **must** pass through headers provided in `HttpRequestConfig.headers` to the `requests` library without adding its own security-related modifications (e.g., stripping "unsafe" headers, unless `requests` itself does so). This ensures API keys and other necessary headers are sent as intended by the `LLM_Interaction_Gateway_Service`.
+3.  **No Internal Secret Management:** The ST018 logic **must not** implement any form of secret storage, encryption, or complex management for API keys. It consumes them as configured in `HttpRequestConfig`.
+4.  **Prioritize Connection Success:** When implementing `_send_single_http_request` and `make_http_request_with_retry`, if any ambiguity arises in library usage (e.g., `requests`), choices should favor successful connection and data retrieval over more stringent security defaults, provided this is controllable (like `verify_ssl`).
+
+### 6. Conclusion
+
+For subtask ST018, the security posture is one of intentional minimalism to prioritize functionality, success rate, and ease of use in an assumed absolutely secure environment. The existing design documents (`DataModelDetailedDesign_ST018_v1.0` and `ClassFunctionLogicDesign_ST018_v1.0`) largely align with this by providing robust, configurable HTTP client utilities. The key "security" checkpoints are effectively non-security measures: ensuring configurability to bypass potential SSL issues and ensuring direct passthrough of necessary credentials as configured by the calling service.
 
 24. **3.7 详细设计汇总与指令生成Agent (Detailed Design Aggregation & Instruction Generator Agent):**
 
-This will be stored in PKBM as **`LLMPrompt_ST016_v1.0.txt`**.
 
-```text
-You are an expert Python programmer tasked with implementing a core service for a Multi-Agent System. Your goal is to create a robust and functional `PKBMService` class for managing a file-based Project Knowledge Base.
+**第一步：整合详细设计并生成《代码实现指导书_ST018_v1.0》**
 
-**IMPORTANT CONSTRAINTS AND DIRECTIVES:**
-1.  **ABSOLUTELY NO SECURITY FEATURES:** The system will operate in an absolutely secure environment. All permissions are assumed to be fully open. Prioritize functional success and simplicity above all else. Do NOT implement any security measures (e.g., complex input sanitization beyond basic filesystem compatibility, file permission settings, encryption, resource quotas) that could add complexity or cause operational failures.
-2.  **NO COMMENTS OR DOCSTRINGS:** The code must NOT contain any comments or docstrings.
-3.  **CODING STANDARDS (Strictly Adhere):**
-    *   Modular Design: Single responsibility for the class.
-    *   Configuration Management: No hardcoding. Configuration (root directory, categories) injected via constructor. NO EXTERNAL CONFIG FILES.
-    *   Error Handling: Use try-except for all I/O and potential errors. Raise custom exceptions as defined.
-    *   Logging: Use the `logging` module. Logs must include timestamp, module name, level, function name, line number, and relevant trace info. Log execution time for key operations if applicable.
-    *   Code Style: 4-space indent. Max 79 chars per line. ClassName: `CamelCase`. function_name, variable_name, method_name: `snake_case`. CONSTANT_NAME: `UPPER_SNAKE_CASE`. All names must be descriptive.
-    *   Type Hints: MANDATORY for all function/method parameters and return values. Use `typing` module (e.g., `List`, `Dict`, `Optional`, `Union`).
-    *   Dependencies: Prefer Python standard library.
-    *   Code Reuse: Use private helper methods for repeated logic.
+**《代码实现指导书_ST018_v1.0》**
 
-**TASK: Implement the `PKBMService` class in a new Python file.**
+**1. 概述 (Overview)**
+   本文档旨在指导 ST018 子任务的实现，即创建项目知识库管理 (PKBM) 的核心模块。该模块负责以结构化的方式存储、检索、更新和删除项目相关的各种知识条目。考虑到项目对简便性和成功率的绝对优先，本模块将采用内存中的字典作为基础存储，不涉及复杂的数据库或文件持久化机制（除非后续任务明确要求）。
 
-**FILE TO CREATE:** `MAS_Simplified_Project/mas_core/services/pkbm_service.py`
+**2. 文件结构 (File Structure)**
+   *   **创建新文件**: `src/pkbm/pkbm_core.py`
 
-**REQUIRED IMPORTS:**
-```python
-import os
-import datetime
-import threading
-import logging
-import re
-import fnmatch
-from typing import List, Dict, Optional, Union, Any
+**3. 核心类设计 (Core Class Design)**
+   *   **类名**: `PKBMCore`
+   *   **职责**: 提供对项目知识库中条目的增删改查（CRUD）基本操作。
+   *   **内部数据结构**:
+      *   `self.knowledge_base`: 一个字典，用于存储所有知识条目。
+          *   键 (Key): `entry_id` (str) - 知识条目的唯一标识符。
+          *   值 (Value): 一个字典，包含条目的元数据和内容。
+              *   `type`: (str) 条目类型 (e.g., "design_doc", "code_snippet", "requirement", "meeting_minutes", "llm_prompt", "implementation_guide").
+              *   `version`: (str) 版本号 (e.g., "1.0", "1.1_draft").
+              *   `content`: (any) 条目的实际内容 (可以是文本、字典、列表等)。
+              *   `metadata`: (dict) 其他元数据 (e.g., `{"timestamp": "YYYY-MM-DDTHH:MM:SS", "source_agent": "AgentID", "tags": ["tag1", "tag2"]}`).
+              *   `dependencies`: (list) 依赖的其他 `entry_id`列表。
+
+**4. API 接口设计 (API Design)**
+
+   *   `__init__(self)`:
+      *   初始化 `self.knowledge_base = {}`。
+   *   `add_entry(self, entry_id: str, entry_type: str, content: any, version: str = "1.0", metadata: dict = None, dependencies: list = None) -> bool`:
+      *   添加一个新的知识条目。
+      *   如果 `entry_id` 已存在，则操作失败，返回 `False` (为简化，不处理版本冲突，直接覆盖或要求唯一ID)。
+      *   成功添加则返回 `True`。
+      *   `metadata` 如果为 `None`，则初始化为空字典。
+      *   `dependencies` 如果为 `None`，则初始化为空列表。
+   *   `get_entry(self, entry_id: str) -> dict | None`:
+      *   根据 `entry_id` 检索知识条目。
+      *   如果找到，返回包含条目所有信息（type, version, content, metadata, dependencies）的字典。
+      *   如果未找到，返回 `None`。
+   *   `update_entry(self, entry_id: str, content: any = None, entry_type: str = None, version: str = None, metadata_update: dict = None, dependencies: list = None) -> bool`:
+      *   更新现有知识条目。
+      *   如果 `entry_id` 不存在，返回 `False`。
+      *   只更新提供的参数，未提供的参数保持不变。`metadata_update` 应与现有 `metadata` 合并（新的覆盖旧的）。
+      *   成功更新则返回 `True`。
+   *   `delete_entry(self, entry_id: str) -> bool`:
+      *   根据 `entry_id` 删除知识条目。
+      *   如果 `entry_id` 不存在，返回 `False`。
+      *   成功删除则返回 `True`。
+   *   `list_entries(self, entry_type: str = None, tags: list = None) -> list[dict]`:
+      *   列出所有知识条目，可选择按 `entry_type` 或 `metadata` 中的 `tags`进行过滤。
+      *   如果 `tags` 提供，则条目的 `metadata['tags']` 必须包含所有指定的 `tags`。
+      *   返回一个包含符合条件条目字典的列表。每个字典包含 `entry_id` 及其完整数据。
+
+**5. 核心逻辑与算法 (Core Logic and Algorithms)**
+   *   **add_entry**:
+      1.  检查 `entry_id` 是否已存在于 `self.knowledge_base`。
+      2.  若存在，记录警告并返回 `False`（或根据明确需求选择覆盖或抛出异常）。
+      3.  若不存在，构建条目字典，并存入 `self.knowledge_base[entry_id]`。
+      4.  返回 `True`。
+   *   **get_entry**:
+      1.  使用 `self.knowledge_base.get(entry_id)` 尝试获取条目。
+      2.  返回获取到的条目或 `None`。
+   *   **update_entry**:
+      1.  检查 `entry_id` 是否存在于 `self.knowledge_base`。
+      2.  若不存在，返回 `False`。
+      3.  若存在，逐个检查传入的更新参数 (`content`, `entry_type`, `version`, `metadata_update`, `dependencies`)。
+      4.  如果参数不是 `None`，则更新对应字段。对于 `metadata_update`，使用 `dict.update()` 方法合并。
+      5.  返回 `True`。
+   *   **delete_entry**:
+      1.  检查 `entry_id` 是否存在于 `self.knowledge_base`。
+      2.  若不存在，返回 `False`。
+      3.  若存在，使用 `del self.knowledge_base[entry_id]` 删除条目。
+      4.  返回 `True`。
+   *   **list_entries**:
+      1.  初始化一个空的结果列表 `results`。
+      2.  遍历 `self.knowledge_base.items()`。
+      3.  对于每个条目，检查是否满足 `entry_type` 过滤条件（如果 `entry_type` 非 `None`）。
+      4.  检查是否满足 `tags` 过滤条件（如果 `tags` 非 `None`）：检查条目的 `metadata.get('tags', [])` 是否是提供 `tags` 列表的超集。
+      5.  如果所有条件满足，将条目（包含 `entry_id` 作为其中一个键）添加到 `results` 列表。
+      6.  返回 `results`。
+
+**6. 数据结构 (Data Structures)**
+   *   主要数据结构为 Python 字典和列表，如上文 "核心类设计" 中所述。
+
+**7. 错误处理 (Error Handling)**
+   *   主要通过函数返回值（`True`/`False`/`None`）来指示操作成功与否或数据存在与否。
+   *   为简化，不主动抛出异常，除非是Python内置操作（如访问不存在的字典键而不使用 `.get()`）导致的。
+   *   可以在控制台打印警告信息，例如当尝试添加已存在的 `entry_id` 时。
+
+**8. 编码规范 (Coding Standards)**
+   *   遵循 PEP 8 编码规范。
+   *   使用类型提示 (Type Hinting)。
+   *   编写清晰的 Docstrings (Google Style)。
+   *   类名使用 `PascalCase`，函数/方法名和变量名使用 `snake_case`。
+   *   代码应简洁易懂。
+
+**9. 安全考量 (Security Considerations)**
+   *   根据项目要求，**完全不考虑安全性**。所有权限等完全放开，绝对优先保证代码、功能的成功率和简便性。
+
+**10. 预期输出 (Expected Output)**
+    *   一个完整的 Python 文件: `src/pkbm/pkbm_core.py`，包含 `PKBMCore` 类的实现。
+
+
+**第二步：生成给 Roo code LLM 的精确指令文本 (Prompt)**
+
+```english
+You are an expert Python programmer. Your task is to create a new Python module for a Project Knowledge Base Management (PKBM) system.
+This project **ABSOLUTELY PRIORITIZES functionality, simplicity, and speed of development over security**. All permissions are assumed to be fully open. Do NOT implement any security checks, authentication, or authorization mechanisms. Focus solely on making the code work as described and easy to configure/use.
+
+**Project Coding Standards to strictly follow:**
+1.  **PEP 8:** Adhere to PEP 8 style guidelines.
+2.  **Type Hinting:** Use Python type hints for all function/method signatures and important local variables. Import necessary types from the `typing` module (e.g., `Dict`, `List`, `Any`, `Optional`).
+3.  **Docstrings:** Write comprehensive docstrings for the class and all public methods using Google Style.
+    Example:
+    ```python
+    def my_method(self, arg1: str, arg2: int) -> bool:
+        """Does something interesting.
+
+        Args:
+            arg1 (str): The first argument.
+            arg2 (int): The second argument.
+
+        Returns:
+            bool: True if successful, False otherwise.
+        """
+        # ... implementation ...
+    ```
+4.  **Naming Conventions:**
+    *   Class names: `PascalCase` (e.g., `PKBMCore`).
+    *   Function/method names: `snake_case` (e.g., `add_entry`).
+    *   Variable names: `snake_case` (e.g., `knowledge_base`).
+5.  **Simplicity:** Keep the code simple and direct. Avoid overly complex constructs if simpler alternatives exist. No external libraries beyond the Python standard library are needed for this task.
+6.  **Error Handling:** For this module, error handling should primarily be through return values (e.g., `True`/`False` for success/failure, `None` if an item is not found). You can print warning messages to the console for non-critical issues (e.g., trying to add an entry with an existing ID). Do not raise custom exceptions unless absolutely necessary for Python's internal logic.
+
+**Task Details:**
+
+1.  **Create a new file** named `pkbm_core.py` within a directory structure `src/pkbm/`.
+    So the full path will be `src/pkbm/pkbm_core.py`.
+
+2.  **Implement a class** named `PKBMCore`.
+
+3.  **Class `PKBMCore` Details:**
+
+    *   **`__init__(self)`:**
+        *   Initializes an instance variable `self.knowledge_base: Dict[str, Dict[str, Any]] = {}`. This dictionary will store all knowledge entries.
+        *   The structure for an entry in `self.knowledge_base` is:
+            `entry_id (str)` as the key, and its value is a dictionary:
+            ```python
+            {
+                "type": str,  # e.g., "design_doc", "code_snippet", "requirement"
+                "version": str, # e.g., "1.0", "1.1_draft"
+                "content": Any, # The actual content
+                "metadata": Dict[str, Any], # e.g., {"timestamp": "YYYY-MM-DDTHH:MM:SS", "source_agent": "AgentID", "tags": ["tag1", "tag2"]}
+                "dependencies": List[str] # List of other entry_ids this entry depends on
+            }
+            ```
+
+    *   **`add_entry(self, entry_id: str, entry_type: str, content: Any, version: str = "1.0", metadata: Optional[Dict[str, Any]] = None, dependencies: Optional[List[str]] = None) -> bool`:**
+        *   Adds a new knowledge entry to `self.knowledge_base`.
+        *   If `entry_id` already exists in `self.knowledge_base`, print a warning message to the console (e.g., f"Warning: Entry ID '{entry_id}' already exists. Not overwriting.") and return `False`. (For simplicity, we are not implementing versioning conflict resolution here, just preventing overwrite on add).
+        *   If `metadata` is `None`, it should be initialized as an empty dictionary before storing.
+        *   If `dependencies` is `None`, it should be initialized as an empty list before storing.
+        *   Construct the entry dictionary as specified above and store it.
+        *   Return `True` if the entry is successfully added.
+
+    *   **`get_entry(self, entry_id: str) -> Optional[Dict[str, Any]]`:**
+        *   Retrieves a knowledge entry by its `entry_id`.
+        *   Returns the complete entry dictionary (including type, version, content, metadata, dependencies) if found.
+        *   Returns `None` if the `entry_id` is not found.
+
+    *   **`update_entry(self, entry_id: str, content: Any = None, entry_type: Optional[str] = None, version: Optional[str] = None, metadata_update: Optional[Dict[str, Any]] = None, dependencies: Optional[List[str]] = None) -> bool`:**
+        *   Updates an existing knowledge entry.
+        *   If `entry_id` does not exist in `self.knowledge_base`, return `False`.
+        *   Only update the fields for which an argument is provided (i.e., the argument is not `None`).
+        *   If `content` is provided, update the 'content' field.
+        *   If `entry_type` is provided, update the 'type' field.
+        *   If `version` is provided, update the 'version' field.
+        *   If `metadata_update` is provided, it should be merged with the existing 'metadata'. Keys in `metadata_update` will overwrite existing keys in the entry's 'metadata' dictionary. If 'metadata' doesn't exist on the entry, it should be treated as an empty dict before updating.
+        *   If `dependencies` is provided, update the 'dependencies' field.
+        *   Return `True` if the update is successful.
+
+    *   **`delete_entry(self, entry_id: str) -> bool`:**
+        *   Deletes a knowledge entry by its `entry_id`.
+        *   If `entry_id` does not exist in `self.knowledge_base`, return `False`.
+        *   Otherwise, delete the entry and return `True`.
+
+    *   **`list_entries(self, entry_type: Optional[str] = None, tags: Optional[List[str]] = None) -> List[Dict[str, Any]]`:**
+        *   Returns a list of knowledge entries. Each entry in the list should be a dictionary that includes its `entry_id` plus all its stored data.
+        *   Example item in the returned list:
+            ```python
+            {
+                "entry_id": "some_id",
+                "type": "design_doc",
+                "version": "1.0",
+                "content": "...",
+                "metadata": {"tags": ["ui", "frontend"]},
+                "dependencies": ["req_001"]
+            }
+            ```
+        *   If `entry_type` is provided, filter entries by this type.
+        *   If `tags` is provided (e.g., `['tagA', 'tagB']`), filter entries where the entry's `metadata['tags']` list (if it exists and is a list) contains ALL of the tags specified in the `tags` argument. This is a "contains all" (subset) check.
+        *   If both `entry_type` and `tags` are provided, entries must satisfy both conditions.
+        *   If no filters are provided, return all entries.
+
+4.  **Imports:**
+    *   Make sure to include `from typing import Dict, List, Any, Optional` at the beginning of the file.
+
+**Expected Output:**
+A single, complete Python file `src/pkbm/pkbm_core.py` containing the `PKBMCore` class, with all specified methods, type hints, and Google-style docstrings. The code should be runnable as is (assuming it's imported into another Python script).
+
 ```
-
-**CUSTOM EXCEPTIONS TO DEFINE (within `pkbm_service.py`, before the class):**
-```python
-class PKBMError(Exception):
-    pass
-
-class PKBMInitializationError(PKBMError):
-    pass
-
-class InvalidCategoryError(PKBMError):
-    pass
-
-class PKBMStorageError(PKBMError):
-    pass
-
-class PKBMRetrievalError(PKBMError):
-    pass
-
-class PKBMConcurrencyError(PKBMError):
-    pass
-```
-
-**CLASS DEFINITION: `PKBMService`**
-
-**Attributes:**
-*   `root_dir: str` (Absolute path to PKBM root)
-*   `primary_categories: List[str]` (List of valid primary category names)
-*   `write_lock: threading.Lock` (For serializing write access)
-
-**Constructor:**
-*   **Signature:** `def __init__(self, pkbm_root_directory: str, category_definitions: List[Dict[str, str]]) -> None:`
-*   **Logic:**
-    1.  Store `pkbm_root_directory` in `self.root_dir`. Validate it's an absolute path. If not, raise `ValueError("PKBM root directory must be an absolute path.")`.
-    2.  Initialize `self.primary_categories` by extracting the 'category_name' string from each dictionary in the `category_definitions` list.
-    3.  Initialize `self.write_lock = threading.Lock()`.
-    4.  Call `self._initialize_pkbm_structure()`.
-    5.  Handle potential `OSError` during directory checks/creation in `_initialize_pkbm_structure` by raising `PKBMInitializationError`.
-
-**Private Methods:**
-
-1.  **`_initialize_pkbm_structure(self) -> None:`**
-    *   Logic:
-        1.  Try to create `self.root_dir` if it doesn't exist: `os.makedirs(self.root_dir, exist_ok=True)`.
-        2.  For each `category_name` in `self.primary_categories`:
-            *   `category_path = os.path.join(self.root_dir, category_name)`.
-            *   Try to create `category_path` if it doesn't exist: `os.makedirs(category_path, exist_ok=True)`.
-    *   Error Handling: If any `os.makedirs` call fails (e.g., due to permissions), catch `OSError` and raise `PKBMInitializationError(f"Failed to create/access PKBM directory structure: {e}")`.
-
-2.  **`_get_category_path(self, category_name: str) -> str:`**
-    *   Logic:
-        1.  If `category_name` is not in `self.primary_categories`, raise `InvalidCategoryError(f"Category '{category_name}' is not a defined primary category.")`.
-        2.  Return `os.path.join(self.root_dir, category_name)`.
-
-3.  **`_generate_timestamp(self) -> str:`**
-    *   Logic:
-        1.  `now = datetime.datetime.now()`.
-        2.  Return `now.strftime('%Y%m%d%H%M%S') + '{:03d}'.format(now.microsecond // 1000)`.
-
-4.  **`_generate_filename(self, artifact_identifier: str, source_agent_id_tag: str, timestamp_version: str, file_extension: str) -> str:`**
-    *   Logic:
-        1.  `cleaned_artifact_identifier = artifact_identifier.replace(' ', '_')` (Add more cleaning if necessary for filesystem compatibility, but keep it simple).
-        2.  Return `f"{cleaned_artifact_identifier}-{source_agent_id_tag}-{timestamp_version}.{file_extension.lstrip('.')}"`.
-
-5.  **`_parse_filename(self, filename_with_ext: str) -> Optional[Dict[str, str]]:`**
-    *   Logic:
-        1.  Define regex: `pattern = re.compile(r'^(?P<identifier>.+)-(?P<agent_id>Agent\d+\.\d+)-(?P<timestamp>\d{17})\.(?P<extension>[a-zA-Z0-9]+)$')`.
-        2.  `match = pattern.match(filename_with_ext)`.
-        3.  If `match`, return `match.groupdict()`.
-        4.  Else, return `None`.
-
-**Public Methods:**
-
-1.  **`store_artifact(self, category_name: str, artifact_identifier: str, source_agent_id: str, content: Union[str, bytes], file_extension_override: Optional[str] = None) -> str:`**
-    *   Logic:
-        1.  `logger = logging.getLogger(__name__)`.
-        2.  Call `self._get_category_path(category_name)` to get `target_dir`. (This will raise `InvalidCategoryError` if category is invalid).
-        3.  Determine `determined_extension`:
-            *   If `file_extension_override` is provided, use `file_extension_override.lstrip('.')`.
-            *   Else if `artifact_identifier.lower().endswith('.json')`, use `'json'`.
-            *   Else if `artifact_identifier.lower().endswith('.md')`, use `'md'`.
-            *   Else, use `'txt'`.
-        4.  `timestamp_version = self._generate_timestamp()`.
-        5.  `filename = self._generate_filename(artifact_identifier, source_agent_id, timestamp_version, determined_extension)`.
-        6.  `full_path = os.path.join(target_dir, filename)`.
-        7.  `lock_acquired = self.write_lock.acquire(timeout=10)`.
-        8.  If not `lock_acquired`, raise `PKBMConcurrencyError("Failed to acquire write lock for storing artifact.")`.
-        9.  `try:`
-            *   `os.makedirs(target_dir, exist_ok=True)` (for safety, though `_initialize_pkbm_structure` should handle it).
-            *   If `isinstance(content, bytes)`: `mode = 'wb'`.
-            *   Else (`isinstance(content, str)`): `mode = 'w'`, `encoding = 'utf-8'`.
-            *   `with open(full_path, mode, encoding=(encoding if mode == 'w' else None)) as f:`
-                *   `f.write(content)`.
-            *   `logger.info(f"Artifact stored successfully: {full_path}")`.
-            *   Return `full_path`.
-        10. `except OSError as e:`
-            *   `logger.error(f"OSError storing artifact {full_path}: {e}", exc_info=True)`.
-            *   Raise `PKBMStorageError(f"Failed to store artifact {full_path}: {e}")`.
-        11. `finally:`
-            *   If `lock_acquired`, `self.write_lock.release()`.
-
-2.  **`retrieve_artifact_content(self, full_artifact_path: str, as_bytes: bool = False) -> Union[str, bytes, None]:`**
-    *   Logic:
-        1.  `logger = logging.getLogger(__name__)`.
-        2.  If not `full_artifact_path.startswith(os.path.abspath(self.root_dir))`:
-            *   `logger.warning(f"Attempt to access path '{full_artifact_path}' outside of PKBM root '{self.root_dir}'.")`.
-            *   Raise `PKBMRetrievalError("Attempt to access path outside of PKBM root.")` (For simplicity, raise error instead of returning None, as this is an invalid usage).
-        3.  `try:`
-            *   If `as_bytes`: `mode = 'rb'`, `encoding = None`.
-            *   Else: `mode = 'r'`, `encoding = 'utf-8'`.
-            *   `with open(full_artifact_path, mode, encoding=encoding) as f:`
-                *   `content_data = f.read()`.
-            *   `logger.info(f"Artifact content retrieved: {full_artifact_path}")`.
-            *   Return `content_data`.
-        4.  `except FileNotFoundError:`
-            *   `logger.warning(f"Artifact not found: {full_artifact_path}")`.
-            *   Return `None`.
-        5.  `except OSError as e:`
-            *   `logger.error(f"OSError retrieving artifact {full_artifact_path}: {e}", exc_info=True)`.
-            *   Raise `PKBMRetrievalError(f"Failed to retrieve artifact {full_artifact_path} due to OS error: {e}")`.
-        6.  `except UnicodeDecodeError as e:`
-            *   `logger.error(f"UnicodeDecodeError retrieving artifact {full_artifact_path} as text: {e}", exc_info=True)`.
-            *   Raise `PKBMRetrievalError(f"Failed to decode artifact {full_artifact_path} as text: {e}")`.
-
-3.  **`find_artifact_paths(self, category_name: str, artifact_identifier_pattern: Optional[str] = None, source_agent_id_pattern: Optional[str] = None, timestamp_range_start: Optional[str] = None, timestamp_range_end: Optional[str] = None, latest_only: bool = False) -> List[str]:`**
-    *   Logic:
-        1.  `logger = logging.getLogger(__name__)`.
-        2.  `category_path = self._get_category_path(category_name)`. (Raises `InvalidCategoryError` if invalid).
-        3.  If not `os.path.isdir(category_path)`:
-            *   `logger.warning(f"Category directory not found: {category_path}")`.
-            *   Return `[]`.
-        4.  `matching_files_with_ts: List[tuple[str, str]] = []`.
-        5.  `try:`
-            *   For `item_name` in `os.listdir(category_path)`:
-                *   `item_path = os.path.join(category_path, item_name)`.
-                *   If `os.path.isfile(item_path)`:
-                    *   `filename_parts = self._parse_filename(item_name)`.
-                    *   If `filename_parts` is `None`, continue.
-                    *   `match = True`.
-                    *   If `artifact_identifier_pattern` and not `fnmatch.fnmatch(filename_parts['identifier'], artifact_identifier_pattern)`, `match = False`.
-                    *   If `source_agent_id_pattern` and not `fnmatch.fnmatch(filename_parts['agent_id'], source_agent_id_pattern)`, `match = False`.
-                    *   If `timestamp_range_start` and `filename_parts['timestamp'] < timestamp_range_start`, `match = False`.
-                    *   If `timestamp_range_end` and `filename_parts['timestamp'] > timestamp_range_end`, `match = False`.
-                    *   If `match`, `matching_files_with_ts.append((item_path, filename_parts['timestamp']))`.
-        6.  `except OSError as e:`
-            *   `logger.error(f"OSError listing directory {category_path}: {e}", exc_info=True)`.
-            *   Raise `PKBMRetrievalError(f"Failed to list artifacts in {category_path}: {e}")`.
-        7.  Sort `matching_files_with_ts` by timestamp (second element of tuple) in descending order: `matching_files_with_ts.sort(key=lambda x: x[1], reverse=True)`.
-        8.  If `latest_only` and `matching_files_with_ts`:
-            *   `result = [matching_files_with_ts[0][0]]`.
-        9.  Else:
-            *   `result = [path for path, ts in matching_files_with_ts]`.
-        10. `logger.info(f"Found {len(result)} artifact(s) matching criteria in category '{category_name}'.")`.
-        11. Return `result`.
-
-**DATA MODEL / NAMING CONVENTIONS (Context for implementation):**
-*   PKBM Root Directory: Configurable, passed to constructor.
-*   Directory Structure: `[pkbm_root_directory]/[primary_category_name]/[filename]`
-*   Filename Format: `[artifact_identifier]-[source_agent_id_tag]-[timestamp_version].[file_extension]`
-    *   `artifact_identifier`: e.g., '原始用户需求_v1.0'
-    *   `source_agent_id_tag`: e.g., 'Agent0.1'
-    *   `timestamp_version`: `YYYYMMDDHHMMSSmmm` (e.g., from `_generate_timestamp`)
-    *   `file_extension`: e.g., 'txt', 'json', 'md'
-
-**SECURITY CHECKPOINTS (Implement as part of robust logic, no extra security layers):**
-*   **ST016_SEC_CP01:** `_get_category_path` must strictly validate `category_name` against `self.primary_categories`.
-*   **ST016_SEC_CP02:** `retrieve_artifact_content` must validate `full_artifact_path` is within `self.root_dir`.
-*   **ST016_SEC_CP03:** `write_lock` must be used correctly in `store_artifact` for serialized writes.
-*   **ST016_SEC_CP04:** Robust error handling for all file I/O using try-except and custom exceptions, with appropriate logging.
-
-**EXPECTED OUTPUT:**
-A single, complete Python code file for `MAS_Simplified_Project/mas_core/services/pkbm_service.py`, containing the `PKBMService` class and its associated custom exceptions, adhering to all specified constraints and coding standards.
-```
-```
-
-25. **3.8 人工审核点3协调Agent (Human Review Point 3 Coordinator):**
-
- ## 批准执行
-
-
----
-
-
-# 下一步任务 4.3 静态代码分析Agent (Static Code Analyzer Agent)
-
-基于上述“原始用户需求描述”提供的完整细节和“已完成阶段输出”中提炼的关键点、已确认事项以及明确的设计任务，请你作为 4.3 静态代码分析Agent (Static Code Analyzer Agent) ，开始执行“4.3 静态代码分析Agent (Static Code Analyzer Agent): ”的任务。需要对用户说明、介绍、回答和提问的内容请使用专业严谨的简体中文，对Agent和LLM输出的内容请使用专业的英文。请额外注意，我项目预期会在绝对安全的环境中使用，请完全绝对不考虑安全性，所有权限等完全放开，绝对优先保证代码、功能的成功率和简便性，防止因为权限和安全设定造成的失败，方便配置使用。如果需要Roo code 中 LLM 修改、生成代码，请额外在Prompt中强调我的编码规范中的内容。
-
 我目前暂时的编码规范如下：
 1. 模块化设计
     1. 职责单一: 每个类或模块仅专注于一项功能，实现高内聚、低耦合。
@@ -3398,15 +3684,150 @@ A single, complete Python code file for `MAS_Simplified_Project/mas_core/service
     3. 封装: 对具有相关性的变量和参数进行封装，形成更高级别的抽象，简化代码结构。
 8. 禁止注释
     1. 代码中不允许出现任何注释和DocString
+18. **3.1 当前子任务上下文准备Agent (Current Subtask Context Preparer):**
 
-**4.3 静态代码分析Agent (Static Code Analyzer Agent)：**
+## Current Subtask Context Package for ST019
+
+**Package ID:** `Context_ST019_v1.0`
+**Timestamp:** (Current Timestamp)
+**Prepared For Subtask:** `ST019`
+**Subtask Description (from CodingTaskPlan_v1.0):** "Implement the `execute_llm_call` interface in LLM_Interaction_Gateway_Service."
+
+### 1. Relevant User Stories & Acceptance Criteria Context
+
+Subtask ST019 is a critical internal component. It directly implements the primary interface of the `LLM_Interaction_Gateway_Service`. This service is a foundational enabler for numerous user stories that rely on Large Language Model (LLM) interactions. The successful implementation of ST019 is crucial for:
+
+*   **US003 (Indirectly):** If intent recognition uses an LLM.
+*   **US006, US007, US010, US011, US012, US013, US016:** Many of these specification, design, and planning agents will leverage LLMs via this gateway.
+*   **US021:** "As a Developer, I want to have the system design class and function logic...using unambiguous pseudocode..." (Agent 3.4 will use an LLM via this gateway).
+*   **US024:** "As a Developer, I want to...generate an extremely specific, context-rich prompt text for an external code generation LLM (Roo code LLM)..." (Agent 3.7 will use an LLM via this gateway to formulate the prompt, and the gateway itself will be used in ST026/Agent 4.1 to send that prompt to Roo code LLM).
+*   **US027:** "...auto-suggested simple formatting fixes (which would then be formulated as a new prompt for the LLM to apply)..." (Agent 4.2 may use an LLM via this gateway).
+*   **US028:** "...plain text report (for LLM consumption)..." (Agent 4.3's output might be fed to an LLM by another agent via this gateway).
+*   **US029:** "As a Developer, I want to...have an AI Code Reviewer agent analyze the code..." (Agent 5.1 will heavily rely on an LLM via this gateway).
+*   **US031:** "As a Developer, I want to...have the system generate unit test case code..." (Agent 5.3 will use an LLM via this gateway).
+*   **US033:** "...if tests fail, generate a Markdown debugging analysis report..." (Agent 5.5 may use an LLM via this gateway).
+*   **US035:** "As a Developer, I want to...have the system generate a specific LLM prompt for fixing identified bugs..." (Agent 5.7 will use an LLM via this gateway).
+*   **US039:** "...generate compliant, explanatory code comments...guide an LLM...to apply these comments..." (Agent 6.4 will use an LLM via this gateway).
+*   **US040:** "...update or generate API documentation...README files...Changelog entries..." (Agent 6.5 may use an LLM via this gateway).
+*   **US042:** "...generate a project summary report...distillable knowledge/patterns..." (Agent 6.7 may use an LLM via this gateway).
+
+The "acceptance criteria" for ST019 itself will be technical, focusing on the correct implementation of the `execute_llm_call` method within the `LLMInteractionGatewayService` class. This method must correctly:
+*   Receive high-level LLM call parameters (e.g., target LLM provider, prompt, model-specific settings).
+*   Utilize the outputs of ST018 (data models, exceptions, and `http_client.py`) to:
+    *   Construct the appropriate `HttpRequestConfig`.
+    *   Invoke `make_http_request_with_retry`.
+    *   Handle `HttpResponseData` and exceptions returned by the HTTP client.
+*   Parse the LLM's JSON response into a usable format.
+*   Manage different LLM provider configurations (API keys, base URLs) in a simple, direct way.
+
+### 2. Architectural Context
+
+**Source Document:** `HighLevelArchitectureDesignDocument_v1.0`
+
+*   **Component Definition (LLM_Interaction_Gateway_Service):**
+    *   **Description:** Provides a centralized and standardized interface for all internal services/agents to communicate with external Large Language Models (LLMs).
+    *   **Core Responsibilities relevant to ST019:**
+        *   Abstracting LLM interaction specifics.
+        *   Managing API calls (REST-based, using ST018's utilities).
+        *   **Handling request construction (translating high-level LLM parameters into `HttpRequestConfig`).**
+        *   **Handling response parsing (translating `HttpResponseData` into a service-level response).**
+        *   Implementing retry mechanisms (delegated to ST018's utilities).
+        *   **Managing LLM API keys and endpoint configurations (simplified direct configuration, e.g., via Python dataclasses passed at runtime or service initialization).**
+        *   Logging LLM interactions (leveraging ST018's logging and adding service-level logging).
+
+*   **Relevant Interface Definition (from `ComponentInterfaceDraft_v1.0` and HLDD Section 4):**
+    *   **Interface ID:** `CID011` (Conceptual internal interface to be implemented by the `LLMInteractionGatewayService` class).
+    *   **Interaction:** `Agent_Orchestration_Service` (or any agent) -> `LLM_Interaction_Gateway_Service`.
+    *   **Type:** Internal Python method call.
+    *   **Conceptual Method Signature (to be implemented by ST019):** `execute_llm_call(self, provider_config: LLMProviderConfig, request_details: LLMRequestDetails) -> LLMResponse` (The exact types `LLMProviderConfig`, `LLMRequestDetails`, `LLMResponse` will be designed as part of ST019's detailed design phase by Agents 3.3 and 3.4).
+    *   **Description:** "Sends a request to a configured LLM and returns the response. Handles actual HTTP communication (via ST018 utilities)."
+    *   **ST019 Focus:** Implementing the `LLMInteractionGatewayService` class and its `execute_llm_call` method, which orchestrates the use of ST018's `http_client.py`.
+
+*   **Technology Selection for LLM Interaction:**
+    *   Method: Standard REST API calls (handled by ST018). Python.
+
+### 3. Project Metadata Summary
+
+**Source Document:** `ProjectMetadata_v1.0`
+
+*   **Primary Programming Language:** Python
+*   **LLM Interaction Method:** Standard REST API calls via Web Service (this gateway).
+*   **Key Simplifications & Constraints:**
+    *   Reduced emphasis on efficiency.
+    *   Focus on simplicity, success rate, and ease of configuration.
+    *   **Security Considerations:** Explicitly deprioritized; all permissions should be as open as possible to ensure functionality. Configuration of API keys should be direct and simple (e.g., within dataclasses or passed directly).
+
+### 4. Coding Standards and Guidelines (Crucial for LLM Prompt)
+
+**Source:** User-provided "编码规范" (Full text to be provided to LLM for code generation).
+Key aspects relevant to this task (ST019):
+1.  **Modular Design:**
+    *   The `LLMInteractionGatewayService` class will be a key module.
+    *   It will use dependency injection principles by utilizing the modules from ST018 (e.g., `http_client`, `data_models`, `exceptions`).
+2.  **Configuration Management:**
+    *   All configurations for different LLM providers (e.g., API keys, base URLs, model names, specific header requirements) **must** be managed via Python `@dataclass`.
+    *   These configurations should be passed to the `execute_llm_call` method or to the service during initialization.
+    *   **No external config files (JSON, YAML, etc.). No hardcoding.**
+3.  **Error Handling:**
+    *   The `execute_llm_call` method must comprehensively catch exceptions raised by ST018's `http_client.py` (e.g., `HttpConnectionErrorException`, `LLMAuthenticationError`).
+    *   It should provide clear, formatted error messages if it re-raises exceptions or returns an error status.
+4.  **Logging:**
+    *   Log key events within `execute_llm_call`: request received, LLM provider targeted, parameters used (excluding full sensitive data if possible, but prioritize debuggability), success/failure of the call, and response summary.
+    *   Utilize Python's `logging` module.
+5.  **Code Style:**
+    *   4-space indent, 79-char lines.
+    *   Class names: `CamelCase` (e.g., `LLMInteractionGatewayService`).
+    *   Method/variable names: `snake_case` (e.g., `execute_llm_call`, `provider_config`).
+    *   Constants: `UPPER_SNAKE_CASE`.
+    *   Type Hinting is mandatory.
+6.  **Dependencies:**
+    *   Primarily Python standard library and the modules created in ST018.
+    *   The `requests` library is used internally by ST018.
+7.  **Code Reuse:**
+    *   Leverage the functions and data models from ST018.
+8.  **No Comments/Docstrings:** Code should be self-explanatory. (This applies to the *generated code*; this context package itself IS documentation).
+
+### 5. Existing Code Snippets & File Structure (Output of ST018, Input for ST019)
+
+**Source:** `FileStructurePlan_ST018_v1.0.json` and assumed implementation of ST018.
+The following files and their contents (as designed for ST018) are critical context for ST019, as ST019 will import and use them:
+
+*   **Location:** `app/services/llm_gateway_service/`
+    *   `__init__.py` (Makes it a package)
+    *   `data_models.py`: Contains `HttpRequestConfig`, `HttpResponseData`, `HttpRetryConfig`.
+    *   `exceptions.py`: Contains `HttpClientBaseException`, `LLMAuthenticationError`, etc.
+    *   `http_client.py`: Contains `make_http_request_with_retry` and helper functions.
+
+**ST019 will likely involve creating a new file within this package, for example:**
+*   `app/services/llm_gateway_service/service.py` (or `gateway.py`)
+    *   This file would contain the `LLMInteractionGatewayService` class definition and its `execute_llm_call` method.
+
+### 6. Additional Notes or Constraints for ST019
+
+*   **Provider Abstraction:** The `execute_llm_call` method needs to be designed to handle different LLM providers. This means the `provider_config` and `request_details` parameters must be flexible enough to carry provider-specific information (e.g., API key, base URL, prompt formatting, specific model parameters).
+*   **Simplicity of Configuration:** How different LLM providers are configured (e.g., a dictionary of `LLMProviderConfig` objects managed by the `Agent_Orchestration_Service` and passed to this gateway) should be straightforward. For ST019, assume the necessary `LLMProviderConfig` is passed in for each call.
+*   **Request Construction:** A key part of ST019 is translating the abstract `request_details` and `provider_config` into the concrete `HttpRequestConfig` that `http_client.make_http_request_with_retry` expects. This might involve:
+    *   Formatting the correct API endpoint URL.
+    *   Setting appropriate headers (e.g., `Authorization`, `Content-Type`).
+    *   Structuring the JSON payload according to the target LLM provider's API specification.
+*   **Response Parsing:** Another key part is taking the `HttpResponseData.json_body` and parsing it into a more generic `LLMResponse` structure, or at least returning the raw JSON data in a well-defined way.
+*   **Security (Reiteration):** No security features. API keys are passed directly. SSL verification is configurable as per ST018's design to ensure connection success.
+
+# 下一步任务 3.2 API详细设计Agent (API Detailed Design Agent)
+
+基于上述“原始用户需求描述”提供的完整细节和“已完成阶段输出”中提炼的关键点、已确认事项以及明确的设计任务，请你作为 3.2 API详细设计Agent (API Detailed Design Agent) ，开始执行“3.2 API详细设计Agent (API Detailed Design Agent): ”的任务。对用户说明、介绍、回答和提问的内容请使用专业严谨的简体中文，对Agent和LLM输出的内容请使用专业的英文。请额外注意，我项目预期会在绝对安全的环境中使用，请完全绝对不考虑安全性，所有权限等完全放开，绝对优先保证代码、功能的成功率和简便性，防止因为权限和安全设定造成的失败，方便配置使用。如果需要Roo code 中 LLM 修改、生成代码，请额外在Prompt中强调我的编码规范中的内容。本次循环要完成的是ST019这个子任务，我会提供其他依赖的子任务已有的内容。
+
+**3.2 API详细设计Agent (API Detailed Design Agent)：**
 
     *   **任务:**
-        1.  接收“初步格式化代码_[子任务ID]_v1.0”。
-        2.  从PKBM调取项目配置的静态分析规则集（例如，SonarQube规则子集、FindBugs规则）。
-        3.  运行更深入的静态分析工具，检查潜在bug、代码异味、复杂度过高、未使用的变量/导入、简单的安全漏洞模式（如硬编码密码）。
-        4.  输出详细的静态分析报告，包含问题描述、位置、严重级别和建议修复。
-        5.  将报告存入PKBM，标记为“静态分析报告_[子任务ID]_v1.0”。
-        6.  将报告和代码传递给“AI代码审查员Agent”。
-    *   **输入:** 初步格式化代码。
-    *   **输出:** 详细静态分析报告。
+        1.  接收“当前子任务上下文包”。
+        2.  根据子任务需求和架构中的接口草案，详细设计API：
+            *   精确的URL路径和HTTP方法。
+            *   请求头、路径参数、查询参数的详细定义。
+            *   请求体的JSON/XML Schema (或等效的详细结构描述)。
+            *   响应体的JSON/XML Schema (或等效的详细结构描述) for 各种状态码 (200, 201, 400, 401, 403, 500等)。
+            *   认证和授权机制说明。
+        3.  输出API详细设计文档（例如，OpenAPI/Swagger片段或Markdown格式的详细描述）。
+        4.  将文档存入PKBM，标记为“API详细设计_[子任务ID]_v1.0”。
+    *   **输入:** 子任务上下文包。
+    *   **输出:** API详细设计文档。
