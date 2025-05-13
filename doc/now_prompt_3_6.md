@@ -13,11 +13,3 @@
         6.  将报告存入PKBM，标记为“安全考量_[子任务ID]_v1.0”。
     *   **输入:** 子任务上下文包，所有相关详细设计。
     *   **输出:** 安全考量报告及检查点列表。
-
-Get-Content -Raw .\user_origin_need.md, .\0_2_Phase_output.md, .\ST016.md .\coding_Standards.md, .\ST017.md .\now_prompt_3_1.md | Out-File -FilePath final_prompt.log -Encoding UTF8NoBOM
-Get-Content -Raw .\user_origin_need.md, .\0_2_Phase_output.md, .\ST016.md .\coding_Standards.md, .\ST017.md .\now_prompt_3_2.md | Out-File -FilePath final_prompt.log -Encoding UTF8NoBOM
-Get-Content -Raw .\user_origin_need.md, .\0_2_Phase_output.md, .\ST016.md .\coding_Standards.md, .\ST017.md .\now_prompt_3_3.md | Out-File -FilePath final_prompt.log -Encoding UTF8NoBOM
-Get-Content -Raw .\user_origin_need.md, .\0_2_Phase_output.md, .\ST016.md .\coding_Standards.md, .\ST017.md .\now_prompt_3_4.md | Out-File -FilePath final_prompt.log -Encoding UTF8NoBOM
-Get-Content -Raw .\user_origin_need.md, .\0_2_Phase_output.md, .\ST016.md .\coding_Standards.md, .\ST017.md .\now_prompt_3_5.md | Out-File -FilePath final_prompt.log -Encoding UTF8NoBOM
-Get-Content -Raw .\user_origin_need.md, .\0_2_Phase_output.md, .\ST016.md .\coding_Standards.md, .\ST017.md .\now_prompt_3_6.md | Out-File -FilePath final_prompt.log -Encoding UTF8NoBOM
-Get-Content -Raw .\user_origin_need.md, .\0_2_Phase_output.md, .\ST016.md .\coding_Standards.md, .\ST017.md .\now_prompt_3_7.md | Out-File -FilePath final_prompt.log -Encoding UTF8NoBOM
